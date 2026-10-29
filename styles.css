@@ -83,3 +83,30 @@ body,body:has(.filters),body:has(.story){background:#e3e5e1!important;color:var(
 body:has(.story) .story article,body:has(.story) .story article:nth-child(2n),body:has(.story) .story article:nth-child(2n+1){background:transparent!important;border-bottom:1px solid #aeb7b0!important}
 .detail-section{border-color:#b9c0ba}
 /* Keep the approved dark-grey hero and header unchanged. */
+
+/* Dark charcoal + slate-grey review palette — 29 October 2026. */
+:root{--coal:#171c1d;--coal2:#252c30;--ivory:#39454a;--pale:#39454a;--card:#435057;--ink:#f2f3f2;--sub:#cbd3d3;--rule:#657177;--warm:#d3c0a8}
+html,body,body:has(.filters),body:has(.story){background:#39454a!important;color:#f2f3f2!important}
+.topbar,.footer{background:linear-gradient(110deg,#15191b,#22282c)!important;color:#f2f3f2!important}
+.nav a{color:#e0e4e3}.nav a:hover,.nav a[aria-current]{color:#fff}
+.hero{background:radial-gradient(circle at 68% 16%,#455054,transparent 47%),linear-gradient(115deg,#293237,#333d41 58%,#273136)!important}
+.hero .eyebrow,.hero .intro{color:#e0e5e4!important}
+.features,.section,.page,.page:not(:has(.story)),.page:has(.story),body:has(.filters) .page,body:has(.story) .page{background:#39454a!important;color:#f2f3f2!important}
+.features{border-color:#647176!important}
+.feature{border-color:#647176!important}.feature-symbol,.feature strong{color:#f1f3f2!important}.feature span{color:#c4cecd!important}
+.page h1,.page .eyebrow,.page .lead,.section-title h2,.section-title a,.group-title,.below h2,.detail-section h2,.story h2{color:#f0f3f1!important}
+.page .eyebrow,.tile-meta{color:#c4d1d0!important}.lead,.below p,.detail-section p,.story p,body:has(.story) .story p,.detail-layout figcaption{color:#d2dada!important}
+.section-title,.group-title,.detail-section,.filters{border-color:#67747a!important}
+.tile,body:has(.filters) .tile,.contact-cards span{background:#445158!important;border-color:#66747a!important;color:#f2f3f2!important;box-shadow:none!important}
+.tile:hover{border-color:#c2cfd0!important;background:#4b5960!important}
+.tile h3,.tile p,.tile-meta{color:#f1f3f2!important}.tile p{color:#d1dad9!important}
+.status{background:#56666b!important;color:#ecf4f1!important}.status.online{background:#416358!important;color:#e1f4e8!important}
+.filter{background:#465359!important;border-color:#78878c!important;color:#edf1ef!important}.filter[aria-pressed=true],.filter:hover{background:#1d272b!important;color:#fff!important}
+.below{background:#323e44!important;color:#f1f3f2!important}
+body:has(.story) .story{border-color:#69767a!important}
+body:has(.story) .story article,body:has(.story) .story article:nth-child(2n),body:has(.story) .story article:nth-child(2n+1){background:transparent!important;border-bottom-color:#6a787e!important}
+body:has(.story) .story h2{color:#f1f3f2!important}
+body:has(.story) .page .lead{color:#d4dddd!important}
+.brand img{background:transparent!important}
+.btn{background:#e1d5c4;color:#1e272a;border-color:#e1d5c4}.btn:hover{background:#f6ede2}.btn.outline{background:transparent;color:#f4f5f3;border-color:#9ea9aa}
+.contact-cards span{color:#f2f3f2}
