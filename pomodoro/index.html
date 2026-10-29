@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en" data-theme="wine">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<meta name="theme-color" content="#1c111b" id="themeColor">
+<meta name="description" content="A cozy Pomodoro timer with a tomato that ripens as you focus. Private, responsive and offline-friendly.">
+<title>Pomodoro · Focus Timer</title>
+<style>
+:root {
+ color-scheme:light;
+ --bg:#faf7f1;--panel:#fffefd;--stage:#fff9f6;--surface:#f8f5f0;--ink:#262828;
+ --muted:#74736f;--line:#ebe5df;--red:#ed4640;--red-dark:#ce302e;--moss:#476e45;
+ --soft-red:#fff0ec;--shadow:0 14px 38px rgba(71,43,31,.055);--ring:#f1e9e1;
+}
+:root[data-theme="dark"] {
+ color-scheme:dark;
+ --bg:#171816;--panel:#222321;--stage:#252522;--surface:#2c2e2a;--ink:#f7f0e8;
+ --muted:#b3aea6;--line:#393a35;--red:#ff6558;--red-dark:#f54d42;--moss:#a1bd90;
+ --soft-red:#40302d;--shadow:0 16px 40px rgba(0,0,0,.2);--ring:#3f3b36;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-width:300px;color:var(--ink);background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{opacity:.42;cursor:not-allowed}
+a{color:inherit;text-decoration:none}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--moss);outline-offset:3px}
+.app{max-width:1340px;margin:auto;padding:24px 24px 42px;display:grid;grid-template-columns:185px minmax(0,1fr);column-gap:28px}
+.sidebar{border-right:1px solid var(--line);padding:14px 20px 0 0;min-height:700px}
+.brand{display:flex;align-items:center;gap:10px;font-size:24px;font-weight:800;letter-spacing:-1.1px;white-space:nowrap}
+.brand-icon{height:34px;width:34px;flex:none}
+.side-nav{display:grid;gap:5px;margin-top:65px}.nav-link{display:flex;align-items:center;gap:13px;padding:12px 13px;border-radius:12px;color:var(--muted);font-weight:600}
+.nav-link.active,.nav-link:hover{background:var(--soft-red);color:var(--red)}
+.nav-link svg{width:19px;height:19px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.workspace{min-width:0}.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:52px;margin-bottom:19px}
+.heading{font-size:25px;letter-spacing:-1px;font-weight:800;margin:0}.heading-sub{margin:4px 0 0;color:var(--muted);font-size:13px}
+.header-actions{display:flex;align-items:center;gap:9px}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:39px;height:39px;border:1px solid var(--line);border-radius:12px;color:var(--ink);background:var(--panel)}
+.icon-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.theme-dark,.theme-light{display:none}
+:root:not([data-theme="dark"]) .theme-light{display:block}
+:root[data-theme="dark"] .theme-dark{display:block}
+.content-grid{display:grid;grid-template-columns:minmax(0,1.13fr) minmax(340px,.87fr);gap:17px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.timer-card{min-height:636px;display:flex;flex-direction:column;align-items:center;text-align:center;padding:25px 22px 23px;background:var(--stage);overflow:hidden}
+.mode-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:40px;width:max-content;max-width:100%;margin:0 auto}
+.mode-tab{border:0;background:transparent;color:var(--muted);border-radius:30px;padding:9px 13px;font-size:12px;font-weight:650;white-space:nowrap}
+.mode-tab.active{background:var(--red);color:#fff;box-shadow:0 4px 9px rgba(215,54,46,.15)}
+.tomato-zone{width:min(100%,356px);margin:17px auto 0;position:relative;aspect-ratio:360/305;display:grid;place-items:center}
+.progress-ring{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.progress-track,.progress-line{fill:none;stroke-width:6.5;stroke-linecap:round}
+.progress-track{stroke:var(--ring)}.progress-line{stroke:var(--red);stroke-dasharray:804.25;stroke-dashoffset:804.25;transition:stroke-dashoffset .3s linear}
+#tomatoArt{width:87%;height:88%;overflow:visible;filter:drop-shadow(0 13px 10px rgba(78,49,37,.11))}
+#tomatoMorph{transform-origin:180px 171px;transition:transform .45s ease}
+#tomatoArt .face-part{transition:opacity .25s ease}
+#tomatoArt #glowL,#tomatoArt #glowR{transition:opacity .5s ease}
+#tomatoArt #closedEyes{opacity:0}
+#sparkles{opacity:0;transform-origin:center;transition:opacity .3s ease}
+#tomatoArt.celebrating #sparkles{opacity:1;animation:pop .65s ease both}
+@keyframes pop{from{transform:scale(.72)}to{transform:scale(1)}}
+.timer-display{font-size:clamp(57px,5.6vw,78px);font-weight:790;letter-spacing:-3.8px;line-height:1;font-variant-numeric:tabular-nums;margin-top:1px}
+.timer-message{margin:12px 0 17px;font-size:13px;color:var(--muted);min-height:19px}
+.action-row{display:flex;justify-content:center;align-items:center;gap:14px}
+.control{display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:50%;width:46px;height:46px;background:var(--panel);color:var(--ink)}
+.control svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.start-btn{min-width:166px;min-height:51px;border:0;border-radius:30px;background:var(--red);color:white;font-weight:750;font-size:15px;display:inline-flex;gap:9px;align-items:center;justify-content:center;box-shadow:0 10px 18px rgba(232,66,57,.14)}
+.start-btn:hover{background:var(--red-dark)}.start-btn svg{height:18px;width:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.rounds{font-size:12px;color:var(--muted);margin-top:15px}
+.task-wrap{margin-top:auto;padding-top:21px;width:min(100%,390px);text-align:left}
+.field-label{display:block;font-size:12px;font-weight:650;color:var(--muted);margin-bottom:7px}
+.text-field{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--panel);color:var(--ink);font-size:13px}
+.text-field::placeholder{color:var(--muted);opacity:.7}
+.right-stack{display:grid;gap:16px;min-width:0}
+.settings-card,.stats-card,.chart-card{padding:20px}
+.card-heading{font-size:15px;margin:0;font-weight:780;letter-spacing:-.2px}
+.small-note{font-size:11px;color:var(--muted)}
+.setting-headers{display:grid;grid-template-columns:minmax(89px,1fr) repeat(3,minmax(0,59px));gap:7px;margin:18px 0 6px;color:var(--muted);font-size:10px;text-align:center}
+.timer-setting-row{display:grid;grid-template-columns:minmax(89px,1fr) repeat(3,minmax(0,59px));gap:7px;align-items:center;margin:9px 0}
+.setting-name{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:620;min-width:0}.setting-dot{height:10px;width:10px;flex:none;border-radius:50%;background:var(--red)}
+.setting-dot.short{background:#7ba36f}.setting-dot.long{background:#e6aa79}
+.time-input{width:100%;min-width:0;text-align:center;padding:10px 2px;border:1px solid var(--line);background:var(--surface);border-radius:10px;color:var(--ink);font-weight:700;font-size:13px;appearance:textfield;-moz-appearance:textfield}
+.time-input::-webkit-outer-spin-button,.time-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.section-separator{height:1px;background:var(--line);margin:18px 0 14px}
+.music-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.music-label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:650}
+.music-label svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round}
+.toggle{border:0;border-radius:20px;width:41px;height:24px;background:var(--line);padding:3px;transition:background .15s;flex:none}
+.toggle::after{content:"";display:block;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002;transition:transform .15s}
+.toggle[aria-pressed="true"]{background:var(--moss)}.toggle[aria-pressed="true"]::after{transform:translateX(17px)}
+.audio-more{margin-top:12px;display:grid;grid-template-columns:1fr 90px;gap:9px;align-items:center}
+.select-field{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;min-width:0;padding:9px 7px;font-size:12px}
+#volume{width:100%;accent-color:var(--red)}
+.audio-hidden{display:none}.audio-more[hidden]{display:none}
+.audio-file-note{font-size:11px;color:var(--muted);grid-column:1/-1;line-height:1.45}
+.small-link{color:var(--red);font-weight:650;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.card-title-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:15px}
+.stat{padding:11px 6px 10px;background:var(--surface);border-radius:12px;text-align:center;min-width:0}
+.stat-icon{display:block;margin:0 auto 7px;font-size:16px;line-height:1;color:var(--moss)}.stat-icon svg{height:19px;width:19px;stroke:currentColor;fill:none;stroke-width:1.8}
+.stat strong{display:block;font-size:17px;font-weight:790;letter-spacing:-.5px;font-variant-numeric:tabular-nums}.stat span:last-child{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+.goal-wrap{margin-top:14px}.goal-meta{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:11px;margin-bottom:7px}
+.goal-track{background:var(--surface);border-radius:30px;height:6px;overflow:hidden}
+.goal-fill{height:100%;width:0;background:var(--moss);border-radius:30px;transition:width .2s}
+.chart-nav{display:flex;gap:4px;align-items:center}.mini-btn{height:27px;min-width:27px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.chart{height:120px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;align-items:end;margin-top:15px}
+.chart-col{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;min-width:0}
+.chart-value{font-size:10px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.chart-bar{width:min(100%,27px);height:var(--height);min-height:3px;background:#f7a199;border-radius:6px 6px 3px 3px}
+.chart-bar.today{background:var(--red)}
+.chart-day{font-size:10px;color:var(--muted)}.chart-footer{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;gap:8px;margin-top:12px}
+.extras{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-top:18px;flex-wrap:wrap}
+.extras details{width:100%;border:1px solid var(--line);border-radius:15px;background:var(--panel);padding:13px 16px}
+.extras summary{cursor:pointer;font-size:13px;font-weight:700;list-style-position:inside}
+.extras-inner{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:14px}
+.extra-button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:9px 11px;font-size:12px}
+.extra-button:hover{border-color:var(--red)}
+.extras-inner label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.extras-inner label input[type=number]{width:54px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:7px}
+.extras-inner label input[type=checkbox]{accent-color:var(--red)}
+.file-input{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden;opacity:0}
+.notice{font-size:12px;min-height:15px;color:var(--moss);margin:9px 0 0}
+.privacy{color:var(--muted);font-size:11px;line-height:1.6;margin:15px 2px 0}
+.mobile-bottom{display:none}
+@media(max-width:1130px){.app{grid-template-columns:150px minmax(0,1fr);gap:18px}.sidebar{padding-right:13px}.brand{font-size:21px}.content-grid{grid-template-columns:minmax(0,1fr) minmax(300px,.88fr)}.timer-card{min-height:630px}.settings-card,.stats-card,.chart-card{padding:17px}}
+@media(max-width:900px){.app{display:block;max-width:740px;padding:21px 18px 96px}.sidebar{display:none}.heading{font-size:22px}.content-grid{grid-template-columns:1fr}.timer-card{min-height:0;padding-bottom:22px}.right-stack{display:grid;grid-template-columns:1fr 1fr;gap:14px}.settings-card{grid-column:1/-1}.timer-setting-row,.setting-headers{grid-template-columns:minmax(112px,1fr) repeat(3,minmax(0,84px))}.mobile-bottom{position:fixed;z-index:15;left:0;right:0;bottom:0;display:flex;justify-content:space-around;align-items:center;background:var(--panel);border-top:1px solid var(--line);padding:9px 8px calc(9px + env(safe-area-inset-bottom))}.mobile-bottom a{min-width:65px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:10px}.mobile-bottom a.active{color:var(--red)}.mobile-bottom svg{height:21px;width:21px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}}
+@media(max-width:570px){.app{padding:15px 12px 95px}.topbar{margin-bottom:12px}.heading{font-size:20px}.heading-sub{display:none}.panel{border-radius:18px}.content-grid{gap:13px}.timer-card{padding:19px 13px 22px}.tomato-zone{width:min(100%,314px);margin:12px auto 0}.timer-display{font-size:63px}.timer-message{margin:9px 0 15px}.task-wrap{padding-top:17px}.right-stack{display:grid;grid-template-columns:1fr;gap:13px}.settings-card,.stats-card,.chart-card{padding:17px}.timer-setting-row,.setting-headers{grid-template-columns:minmax(106px,1fr) repeat(3,minmax(0,66px));gap:6px}.chart{height:128px;gap:8px}.heading{letter-spacing:-.6px}}
+@media(max-width:350px){.app{padding-left:9px;padding-right:9px}.mode-tab{padding:9px 10px}.timer-setting-row,.setting-headers{grid-template-columns:minmax(95px,1fr) repeat(3,minmax(0,56px));gap:5px}.start-btn{min-width:135px}.action-row{gap:9px}.timer-display{font-size:55px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+/* V3.1 functional refinements */
+.mode-tab:disabled{opacity:.42;cursor:not-allowed}
+.break-options{display:flex;gap:8px 16px;flex-wrap:wrap;margin:14px 0 7px}
+.break-check{display:flex;align-items:center;gap:7px;color:var(--ink);font-size:11px;font-weight:600;cursor:pointer}
+.break-check input{accent-color:var(--red);width:15px;height:15px}
+.time-input:disabled{opacity:.37;cursor:not-allowed;background:var(--surface)}
+.break-recommendation,.audio-origin{font-size:11px;color:var(--muted);line-height:1.5;margin:8px 0 2px}
+.long-rec{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 11px;margin:10px 0 4px;font-size:11px;line-height:1.45;display:flex;align-items:center;gap:9px;justify-content:space-between}
+.long-rec[hidden]{display:none}
+.rec-button{border:1px solid var(--red);color:var(--red);background:transparent;border-radius:9px;font-size:11px;padding:7px 9px;font-weight:700;white-space:nowrap}
+.break-nudge{padding:9px 13px;border-radius:11px;border:1px solid var(--line);background:var(--surface);font-size:12px;line-height:1.4;color:var(--ink);margin:10px auto;max-width:340px}
+.break-nudge[hidden]{display:none}
+#settings{scroll-margin-top:28px}
+/* V3.2: visible reset controls and a truly optional long break. */
+.setup-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 6px}
+.setup-action{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;font-size:12px;font-weight:680;padding:9px 12px;cursor:pointer}
+.setup-action:hover{border-color:var(--red)}
+.setup-action:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.setup-action.primary-reset{border-color:var(--red);color:var(--red);background:var(--panel)}
+.setup-feedback{color:var(--muted);font-size:11px;line-height:1.5;min-height:14px;margin:7px 0 0}
+.reset-control{position:relative}
+.reset-control span{position:absolute;top:100%;padding-top:4px;font-size:10px;color:var(--muted);font-weight:600;white-space:nowrap}
+.timer-card .rounds{margin-top:23px}
+
+@media(max-width:570px){.long-rec{flex-direction:column;align-items:flex-start}}
+
+/* V3.3: functional controls and editable session history */
+.break-prompt{width:min(100%,390px);padding:10px 12px;margin:4px auto 12px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--ink);text-align:center;font-size:12px;line-height:1.5}
+.break-prompt[hidden],.resume-hint[hidden]{display:none}.break-prompt p{margin:0 0 9px}.break-prompt-actions{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap}.resume-hint{font-size:11px;color:var(--moss);margin:5px 0 0}
+.stats-detail,.notification-help{font-size:11px;color:var(--muted);line-height:1.5}.stats-detail{margin:12px 0 0}.notification-help{width:100%;margin:0}
+.session-log{padding:20px;margin-top:18px;scroll-margin-top:20px}.session-log .card-title-row{margin-bottom:7px}.history-list{display:grid;gap:7px;margin-top:15px}.history-entry{padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}.history-top{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}.history-description{font-weight:650;font-size:12px;overflow-wrap:anywhere}.history-meta{font-size:11px;color:var(--muted);margin-top:4px}.history-buttons{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.history-buttons button,.history-form button{border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:6px 9px;font-size:11px}.history-buttons button:hover,.history-form button:hover{border-color:var(--red)}.history-form[hidden]{display:none}.history-form{margin-top:10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.history-form label{display:grid;gap:5px;font-size:11px;color:var(--muted)}.history-form input,.history-form select{width:100%;min-width:0;padding:8px 6px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:var(--panel)}.history-form .wide{grid-column:span 2}.history-form .form-actions{grid-column:1/-1;display:flex;align-items:center;gap:8px}.history-form .test-field{display:flex;align-items:center;gap:6px}.history-form .test-field input{width:auto}.status-note{font-size:11px;color:var(--muted)}#showMoreHistory{margin-top:12px}
+@media(max-width:570px){.session-log{padding:15px;margin-top:13px}.history-form{grid-template-columns:repeat(2,minmax(0,1fr))}.history-form .wide{grid-column:1/-1}}
+
+
+/* V4 appearance refresh */
+:root {
+ --bg:#f7f2ea;--panel:#fffdfa;--stage:linear-gradient(180deg,#fffdfb 0%,#fff8f2 100%);--surface:#f6efe8;--ink:#232527;
+ --muted:#756f68;--line:#eadfd4;--red:#ef5147;--red-dark:#dd3e37;--moss:#4f7650;--soft-red:#fff2ed;--shadow:0 18px 44px rgba(90,58,42,.08);--ring:#ece4db;
+}
+:root[data-theme="dark"] {
+ --bg:#151514;--panel:#1f201e;--stage:linear-gradient(180deg,#232320 0%,#1b1c1a 100%);--surface:#282926;--ink:#f5efe8;
+ --muted:#b9b1a7;--line:#353630;--red:#ff6a5c;--red-dark:#f75248;--moss:#9bbc94;--soft-red:#3c2d2a;--shadow:0 20px 50px rgba(0,0,0,.26);--ring:#3a3632;
+}
+body{background:
+ radial-gradient(circle at top left, rgba(255,255,255,.82), rgba(255,255,255,0) 28%),
+ radial-gradient(circle at 92% 8%, rgba(255,219,210,.5), rgba(255,219,210,0) 20%),
+ linear-gradient(180deg,#fbf6f0 0%,#f7f2ea 100%);
+}
+:root[data-theme="dark"] body{background:
+ radial-gradient(circle at top left, rgba(255,255,255,.03), rgba(255,255,255,0) 24%),
+ radial-gradient(circle at 92% 7%, rgba(255,113,90,.07), rgba(255,113,90,0) 18%),
+ linear-gradient(180deg,#171715 0%,#131311 100%);
+}
+.app{max-width:1380px;padding:28px 26px 46px;grid-template-columns:210px minmax(0,1fr);column-gap:30px}
+.sidebar{border-right:none;padding:2px 6px 0 0;min-height:720px;position:relative}
+.sidebar::before{content:"";display:block;position:absolute;inset:0 10px 0 0;height:auto;margin:0;border-radius:26px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);pointer-events:none}
+.sidebar > *{position:relative;z-index:1;margin-left:18px}
+.brand{margin-top:18px;font-size:22px;letter-spacing:-1.1px;gap:8px}
+.brand-icon{height:34px;width:34px;filter:drop-shadow(0 4px 8px rgba(239,81,71,.18))}
+.side-nav{margin-top:44px;padding-right:18px}
+.nav-link{padding:13px 14px;border-radius:14px;font-weight:700}
+.nav-link.active,.nav-link:hover{background:var(--soft-red);box-shadow:inset 0 0 0 1px rgba(239,81,71,.08)}
+.topbar{margin-bottom:22px;padding:6px 4px 0}
+.heading{font-size:28px;letter-spacing:-1.15px}
+.heading-sub{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.icon-btn{width:42px;height:42px;border-radius:14px;box-shadow:0 3px 10px rgba(0,0,0,.03)}
+.content-grid{gap:20px;align-items:stretch}
+.panel{border-radius:28px;border:1px solid var(--line);box-shadow:var(--shadow);backdrop-filter:blur(2px)}
+.timer-card{position:relative;min-height:660px;padding:26px 24px 24px;background:var(--stage)}
+.timer-card::before{content:"";position:absolute;inset:0 auto auto 0;width:100%;height:180px;background:linear-gradient(180deg,rgba(255,255,255,.48),rgba(255,255,255,0));pointer-events:none}
+.mode-tabs{position:relative;background:rgba(255,255,255,.55);backdrop-filter:blur(8px);padding:5px;border-radius:999px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+:root[data-theme="dark"] .mode-tabs{background:rgba(255,255,255,.04);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.mode-tab{padding:10px 16px;font-size:12px;font-weight:700;letter-spacing:.02em}
+.mode-tab.active{box-shadow:0 10px 22px rgba(239,81,71,.2), inset 0 1px 0 rgba(255,255,255,.35)}
+.tomato-zone{width:min(100%,372px);margin:20px auto 0}
+.progress-track,.progress-line{stroke-width:7.5}
+#tomatoArt{width:90%;height:90%;filter:drop-shadow(0 16px 18px rgba(78,49,37,.12))}
+.timer-display{font-size:clamp(60px,6vw,84px);letter-spacing:-4.2px;margin-top:8px}
+.timer-message{font-size:13px;margin:14px 0 18px}
+.action-row{gap:16px}
+.control{width:50px;height:50px;border-radius:18px;background:rgba(255,255,255,.6);backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(64,39,27,.05)}
+:root[data-theme="dark"] .control{background:rgba(255,255,255,.03)}
+.start-btn{min-width:184px;min-height:54px;border-radius:999px;background:linear-gradient(180deg,var(--red) 0%, var(--red-dark) 100%);box-shadow:0 14px 24px rgba(239,81,71,.22), inset 0 1px 0 rgba(255,255,255,.18)}
+.start-btn:hover{filter:brightness(1.03)}
+.rounds{margin-top:18px;font-weight:600}
+.task-wrap{padding-top:18px;width:min(100%,410px)}
+.text-field,.time-input,.select-field,.history-form input,.history-form select,.extras-inner label input[type=number]{border-radius:14px;background:rgba(255,255,255,.62);box-shadow:inset 0 1px 1px rgba(255,255,255,.75)}
+:root[data-theme="dark"] .text-field,:root[data-theme="dark"] .time-input,:root[data-theme="dark"] .select-field,:root[data-theme="dark"] .history-form input,:root[data-theme="dark"] .history-form select,:root[data-theme="dark"] .extras-inner label input[type=number]{background:rgba(255,255,255,.03);box-shadow:none}
+.settings-card,.stats-card,.chart-card{padding:22px}
+.card-heading{font-size:16px;letter-spacing:-.25px}
+.time-input{padding:11px 3px;font-size:14px}
+.break-check{font-size:12px}
+.long-rec,.break-prompt,.break-nudge{border-radius:16px;background:rgba(255,255,255,.55);backdrop-filter:blur(8px)}
+:root[data-theme="dark"] .long-rec,:root[data-theme="dark"] .break-prompt,:root[data-theme="dark"] .break-nudge{background:rgba(255,255,255,.03)}
+.setup-action,.extra-button,.history-buttons button,.history-form button,.mini-btn,.rec-button{border-radius:12px}
+.setup-action.primary-reset{background:var(--soft-red)}
+.audio-origin,.break-recommendation,.setup-feedback,.stats-detail,.notification-help{line-height:1.55}
+.stat{padding:14px 8px 13px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.92) 0%, rgba(247,240,232,.95) 100%);border:1px solid rgba(234,223,212,.95)}
+:root[data-theme="dark"] .stat{background:linear-gradient(180deg,rgba(255,255,255,.04) 0%, rgba(255,255,255,.02) 100%);border-color:rgba(255,255,255,.05)}
+.stat strong{font-size:19px}
+.goal-track{height:8px;background:rgba(0,0,0,.05)}
+:root[data-theme="dark"] .goal-track{background:rgba(255,255,255,.06)}
+.goal-fill{background:linear-gradient(90deg,#729768,#4f7650)}
+.chart{height:132px;gap:10px}
+.chart-bar{border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,#ffc1ba 0%, #f48678 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.chart-bar.today{background:linear-gradient(180deg,#ff7e72 0%, #ef5147 100%)}
+.session-log{padding:22px;margin-top:20px}
+.history-entry{padding:12px 13px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.78) 0%, rgba(246,239,232,.92) 100%)}
+:root[data-theme="dark"] .history-entry{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015))}
+.extras details{border-radius:18px;padding:15px 18px;box-shadow:var(--shadow)}
+.extras summary{font-size:13px;font-weight:780}
+.mobile-bottom{backdrop-filter:blur(10px)}
+.privacy{max-width:980px}
+@media(max-width:1130px){.app{grid-template-columns:176px minmax(0,1fr);padding:24px 20px 42px}.brand{font-size:23px}.content-grid{gap:16px}.panel{border-radius:24px}}
+@media(max-width:900px){.app{display:block;max-width:760px;padding:20px 16px 98px}.sidebar::before{display:none}.sidebar>*{margin-left:0}.topbar{padding-top:0}.heading{font-size:24px}.heading-sub{font-size:12px}.timer-card{min-height:0;padding:22px 16px 24px}.settings-card,.stats-card,.chart-card{padding:18px}.mobile-bottom{background:rgba(255,253,250,.92)}:root[data-theme="dark"] .mobile-bottom{background:rgba(31,32,30,.95)}}
+@media(max-width:570px){body{background:linear-gradient(180deg,#fbf6f0 0%,#f7f2ea 100%)}.app{padding:14px 10px 96px}.heading{font-size:22px}.heading-sub{display:block;font-size:12px}.panel{border-radius:22px}.timer-card{padding:18px 12px 20px}.mode-tab{padding:10px 12px}.tomato-zone{width:min(100%,320px)}.timer-display{font-size:64px}.control{width:48px;height:48px}.start-btn{min-width:170px}.session-log{padding:16px}}
+
+
+/* V4.2 — original concept-derived character artwork, not a rough CSS tomato */
+.tomato-zone{isolation:isolate}
+#tomatoArt.mascot-art{position:relative;display:block;width:100%;height:100%;overflow:visible;filter:none}
+#tomatoArt .mascot-frame{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;display:block;pointer-events:none;user-select:none;transition:opacity .32s linear;filter:drop-shadow(0 13px 10px rgba(94,52,33,.10))}
+:root[data-theme="dark"] #tomatoArt .mascot-frame{filter:drop-shadow(0 14px 15px rgba(0,0,0,.3))}
+#tomatoArt .mascot-sparkles{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s ease}
+#tomatoArt.celebrating .mascot-sparkles{opacity:1}
+.mascot-sparkles .burst{position:absolute;width:8px;height:20px;border-radius:20px;background:#ffb04c;box-shadow:0 0 13px rgba(255,176,76,.25);transform:rotate(20deg)}
+.mascot-sparkles .burst-one{left:5%;top:43%;transform:rotate(-64deg)}
+.mascot-sparkles .burst-two{left:10%;top:32%;transform:rotate(-29deg)}
+.mascot-sparkles .burst-three{right:7%;top:36%;transform:rotate(44deg)}
+.mascot-sparkles .burst-four{right:3%;top:52%;transform:rotate(65deg)}
+.mascot-sparkles .heart-sparkle{position:absolute;top:19%;right:4%;font-size:25px;line-height:1;color:#ff756c;transform:rotate(12deg)}
+@media(prefers-reduced-motion:reduce){#tomatoArt .mascot-frame{transition:none}}
+
+
+/* V4.4: character stays wholly within the circular progress indicator */
+.tomato-zone{position:relative;isolation:isolate}
+.progress-ring{z-index:1}
+#tomatoArt.mascot-art{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:75%;height:75%;z-index:2}
+/* Never blend open-eyed and closed-eyed expressions: the completion switch is instantaneous. */
+#tomatoArt .mascot-happy{visibility:hidden;transition:none!important;opacity:0!important}
+#tomatoArt.celebrating .mascot-frame:not(.mascot-happy){visibility:hidden!important;opacity:0!important;transition:none!important}
+#tomatoArt.celebrating .mascot-happy{visibility:visible!important;opacity:1!important}
+@media(prefers-reduced-motion:reduce){#tomatoArt .mascot-frame{transition:none!important}}
+
+
+/* V4.5: precision placement of the visible tomato within the circle */
+.tomato-zone{display:grid;place-items:center}
+#tomatoArt.mascot-art{
+ position:absolute;
+ left:50%;top:50%;
+ width:75%;height:75%;
+ transform:translate(-53.2%,-58.1%);
+ z-index:2;
+}
+.progress-ring{left:0;top:0;z-index:1}
+
+/* V4.5: flat, consistent charcoal dark theme. No gradients or spotlight overlays. */
+:root[data-theme="dark"]{
+ --bg:#17191a;--panel:#202223;--stage:#202223;--surface:#292b2c;
+ --ink:#f5f2ed;--muted:#b7b9b7;--line:#363839;
+ --red:#ff675d;--red-dark:#ed544a;--moss:#a8c89f;
+ --soft-red:#352a2a;--shadow:none;--ring:#393b3c;
+}
+:root[data-theme="dark"] body{background:#17191a!important}
+:root[data-theme="dark"] .panel,
+:root[data-theme="dark"] .sidebar::before,
+:root[data-theme="dark"] .extras details{background:#202223!important;box-shadow:none!important;backdrop-filter:none!important}
+:root[data-theme="dark"] .timer-card{background:#202223!important}
+:root[data-theme="dark"] .timer-card::before{display:none!important}
+:root[data-theme="dark"] .mode-tabs,
+:root[data-theme="dark"] .control,
+:root[data-theme="dark"] .icon-btn,
+:root[data-theme="dark"] .setup-action,
+:root[data-theme="dark"] .extra-button,
+:root[data-theme="dark"] .mini-btn,
+:root[data-theme="dark"] .text-field,
+:root[data-theme="dark"] .time-input,
+:root[data-theme="dark"] .select-field,
+:root[data-theme="dark"] .stat,
+:root[data-theme="dark"] .history-entry,
+:root[data-theme="dark"] .break-prompt,
+:root[data-theme="dark"] .break-nudge,
+:root[data-theme="dark"] .long-rec,
+:root[data-theme="dark"] .history-form input,
+:root[data-theme="dark"] .history-form select,
+:root[data-theme="dark"] .history-buttons button,
+:root[data-theme="dark"] .history-form button{
+ background:#292b2c!important;box-shadow:none!important;backdrop-filter:none!important;
+}
+:root[data-theme="dark"] .mode-tab.active,
+:root[data-theme="dark"] .start-btn{background:#ff675d!important;box-shadow:none!important;color:#fff}
+:root[data-theme="dark"] .mode-tab.active:hover,
+:root[data-theme="dark"] .start-btn:hover{background:#ed544a!important}
+:root[data-theme="dark"] .chart-bar{background:#c66b65!important;box-shadow:none!important}
+:root[data-theme="dark"] .chart-bar.today{background:#ff675d!important}
+:root[data-theme="dark"] .goal-fill{background:#a8c89f!important}
+:root[data-theme="dark"] .mobile-bottom{background:#202223!important;backdrop-filter:none!important}
+
+
+/* V5.1 — responsive, uncluttered desktop / tablet / phone layout. */
+body { font-size:16px; }
+.app {
+ width:100%;max-width:1920px;margin:0 auto;
+ grid-template-columns:clamp(185px,13.5vw,236px) minmax(0,1fr);
+ column-gap:clamp(18px,2.15vw,38px);
+ padding:clamp(16px,2vw,36px) clamp(16px,2.3vw,44px) 40px;
+}
+.sidebar { min-height:270px;height:max-content;align-self:start;position:sticky;top:18px; }
+.sidebar::before { inset:0 6px 0 0; }
+.brand { font-size:clamp(22px,1.45vw,28px); }
+.side-nav { margin-top:38px; }
+.nav-link { font-size:15px; }
+.topbar { margin-bottom:20px; }
+.heading { font-size:clamp(27px,1.9vw,36px); }
+.content-grid { grid-template-columns:minmax(0,1.14fr) minmax(390px,.86fr);gap:clamp(16px,1.6vw,28px);align-items:start; }
+.panel { border-radius:24px; }
+.timer-card { min-height:0;padding:clamp(22px,2.2vw,38px); }
+.timer-card::before { height:115px; }
+.mode-tabs { gap:5px; }
+.mode-tab { padding:11px clamp(13px,1vw,20px);font-size:14px; }
+.tomato-zone { width:min(100%,clamp(310px,27vw,480px));margin:18px auto 0; }
+.timer-display { font-size:clamp(74px,5.1vw,106px);letter-spacing:-.055em;margin-top:8px; }
+.timer-message { font-size:15px;margin:10px 0 19px;min-height:19px; }
+.start-btn { font-size:16px;min-width:190px;min-height:57px; }
+.control { width:52px;height:52px; }
+.timer-card .rounds { margin-top:18px;font-size:13px; }
+.task-wrap { margin-top:22px!important;padding-top:0!important;width:min(100%,500px); }
+.field-label { font-size:13px; }
+.text-field { font-size:15px;padding:13px 14px; }
+.right-stack { gap:16px; }
+.settings-card,.stats-card,.chart-card { padding:clamp(20px,1.5vw,28px); }
+.card-heading { font-size:clamp(17px,1.1vw,20px); }
+.setting-headers,.timer-setting-row { grid-template-columns:minmax(108px,1fr) repeat(3,minmax(51px,75px));gap:9px; }
+.setting-headers { font-size:12px;margin:15px 0 7px; }
+.timer-setting-row { margin:8px 0; }
+.setting-name { font-size:14px;gap:9px; }
+.time-input { font-size:16px;padding:12px 3px; }
+.break-options { gap:8px 18px;margin:16px 0 12px; }
+.break-check { font-size:13px; }
+.break-check input { width:17px;height:17px; }
+.setup-actions { margin:10px 0 5px; }
+.setup-action { font-size:13px;padding:10px 13px; }
+.section-separator { margin:18px 0 17px; }
+.music-label { font-size:14px; }
+.select-field { font-size:14px; }
+/* Focus on the controls: the selected durations and modes are self-explanatory. */
+.heading-sub,.break-recommendation,.audio-origin,.stats-detail,.setup-feedback,.long-rec {display:none!important;}
+#dayLabel[hidden] {display:none!important;}
+.stats-grid { gap:10px; }
+.stat { padding:17px 10px 15px; }
+.stat strong { font-size:clamp(21px,1.55vw,27px); }
+.stat>span:last-child { font-size:12px; }
+.goal-wrap { margin-top:16px; }
+.chart { height:170px;gap:11px; }
+.chart-value,.chart-day { font-size:12px; }
+.chart-bar { width:min(100%,34px); }
+.chart-head-tools { display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end; }
+.week-total { color:var(--moss);font-size:14px;font-weight:750;white-space:nowrap; }
+.chart-footer { margin-top:14px;font-size:12px; }
+.history-disclosure { margin-top:16px; }
+.history-disclosure > summary { list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer; border:1px solid var(--line);background:var(--panel);border-radius:17px;padding:15px 20px;font-size:15px;font-weight:700; }
+.history-disclosure > summary::-webkit-details-marker {display:none}
+.history-disclosure > summary::after {content:'▾';font-size:17px;color:var(--muted);margin-left:auto;}
+.history-disclosure[open] > summary::after {content:'▴'}
+.history-disclosure > summary span { color:var(--muted);font-size:12px;font-weight:500; }
+.history-disclosure .session-log {margin:10px 0 0;}
+.privacy {font-size:12px;line-height:1.5;color:var(--muted);margin-top:14px;}
+.version-stamp {margin-top:16px!important;}
+/* Make the flat dark appearance consistent with V4.5. */
+:root[data-theme="dark"] .history-disclosure > summary {background:#202223;}
+@media(min-width:1600px){
+ .content-grid {grid-template-columns:minmax(0,1.18fr) minmax(430px,.82fr);}
+ .tomato-zone {width:min(100%,480px);}
+ .timer-card {padding-top:38px;padding-bottom:38px;}
+}
+@media(max-width:1190px) and (min-width:1021px){
+ .app {grid-template-columns:155px minmax(0,1fr);gap:15px;padding:18px;}
+ .brand {font-size:21px;}
+ .sidebar > * {margin-left:10px;}
+ .side-nav {padding-right:5px;}
+ .content-grid {grid-template-columns:minmax(0,1fr) minmax(320px,.92fr);gap:14px;}
+ .timer-card {padding:19px 14px;}
+ .tomato-zone {width:min(100%,360px);}
+ .setting-headers,.timer-setting-row {grid-template-columns:minmax(95px,1fr) repeat(3,minmax(45px,60px));gap:5px;}
+ .setting-name {font-size:13px;}
+ .settings-card,.stats-card,.chart-card {padding:17px;}
+}
+@media(max-width:1020px){
+ .app {display:block;max-width:940px;padding:18px 18px 100px;}
+ .sidebar {display:none;}
+ .content-grid {grid-template-columns:1fr;gap:16px;}
+ .timer-card {padding:26px 20px 30px;}
+ .tomato-zone {width:min(100%,410px);}
+ .right-stack {grid-template-columns:repeat(2,minmax(0,1fr));}
+ .settings-card {grid-column:1/-1;}
+ .mobile-bottom {position:fixed;z-index:15;left:0;right:0;bottom:0;display:flex;justify-content:space-around;align-items:center;background:var(--panel);border-top:1px solid var(--line);padding:9px 8px calc(9px + env(safe-area-inset-bottom));}
+ .mobile-bottom a {min-width:65px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px;}
+ .mobile-bottom a.active {color:var(--red);}
+ .mobile-bottom svg {height:23px;width:23px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+ :root[data-theme="dark"] .mobile-bottom {background:#202223;}
+}
+@media(max-width:680px){
+ .app {padding:13px 12px 92px;}
+ .topbar {margin-bottom:12px;}
+ .heading {font-size:25px;}
+ .right-stack {grid-template-columns:1fr;gap:12px;}
+ .settings-card {grid-column:auto;}
+ .timer-card {padding:20px 13px 24px;}
+ .tomato-zone {width:min(100%,340px);margin-top:15px;}
+ .timer-display {font-size:clamp(59px,14vw,76px);}
+ .timer-message {font-size:13px;}
+ .mode-tab {font-size:12px;padding:10px 12px;}
+ .settings-card,.stats-card,.chart-card {padding:17px;}
+ .setting-headers,.timer-setting-row {grid-template-columns:minmax(91px,1fr) repeat(3,minmax(42px,67px));gap:6px;}
+ .setting-name {font-size:12px;}
+ .time-input {font-size:14px;padding:11px 2px;}
+ .stat strong {font-size:22px;}
+ .chart {height:150px;}
+ .chart-head-tools {gap:7px;}
+ .history-disclosure > summary {padding:15px 17px;}
+}
+@media(max-width:365px){
+ .app {padding-left:9px;padding-right:9px;}
+ .setting-headers,.timer-setting-row {grid-template-columns:minmax(86px,1fr) repeat(3,minmax(38px,56px));gap:5px;}
+ .mode-tab {padding:10px 9px;font-size:11px;}
+ .start-btn {min-width:150px;}
+ .action-row {gap:9px;}
+ .chart-head-tools {flex-wrap:nowrap;}
+ .week-total {font-size:12px;}
+}
+
+
+/* V5.2 — two user-selectable atmospheres. Contrast and character are intentionally distinct. */
+:root[data-theme="wine"] {
+ color-scheme:dark;
+ --bg:#1c111b;--panel:#281a26;--stage:#251821;--surface:#372431;
+ --ink:#fff1ee;--muted:#cdb6c4;--line:#563748;
+ --red:#ec3479;--red-dark:#c32060;--moss:#a9c89e;
+ --soft-red:#50243a;--shadow:0 16px 48px rgba(10,3,11,.22);--ring:#58344b;
+ --plant:#a96a86;
+}
+:root[data-theme="golden"] {
+ color-scheme:light;
+ --bg:#ffc847;--panel:#fff8e9;--stage:#fffbf3;--surface:#fff0d4;
+ --ink:#371c2a;--muted:#765c61;--line:#ecd4af;
+ --red:#781c41;--red-dark:#591230;--moss:#4e7d4c;
+ --soft-red:#fae9d5;--shadow:0 15px 35px rgba(104,62,13,.11);--ring:#eaddc9;
+ --plant:#627733;
+}
+:root[data-theme="wine"] body {
+ background:radial-gradient(ellipse at 95% 5%,rgba(107,38,77,.35),transparent 52%),linear-gradient(115deg,#170e17 0%,#291625 57%,#180f1a 100%);
+}
+:root[data-theme="golden"] body {
+ background:radial-gradient(circle at 13% 92%,rgba(245,150,28,.32),transparent 42%),linear-gradient(120deg,#ffd55e 0%,#ffc23d 55%,#f6ac31 100%);
+}
+:root[data-theme="wine"] .panel,:root[data-theme="wine"] .sidebar::before,
+:root[data-theme="wine"] .extras details,
+:root[data-theme="golden"] .panel,:root[data-theme="golden"] .sidebar::before,
+:root[data-theme="golden"] .extras details {background:var(--panel);border-color:var(--line);box-shadow:var(--shadow)}
+:root[data-theme="wine"] .timer-card,:root[data-theme="golden"] .timer-card {background:var(--stage)}
+:root[data-theme="wine"] .timer-card::before,:root[data-theme="golden"] .timer-card::before {display:none}
+:root[data-theme="wine"] .sidebar::before {background:linear-gradient(180deg,#291a2a,#241622 72%,#2a1828)}
+:root[data-theme="golden"] .sidebar::before {background:linear-gradient(180deg,#fff9ee,#fff1d2)}
+.sidebar {min-height:min(820px,calc(100vh - 50px));overflow:hidden;border-right:none;}
+.botanical-decoration {position:absolute;width:90%;height:auto;left:1%;bottom:-8px;color:var(--plant);opacity:.35;pointer-events:none;z-index:1}
+.sidebar>.brand,.sidebar>.side-nav {position:relative;z-index:2}
+:root[data-theme="wine"] .botanical-decoration {opacity:.27}
+:root[data-theme="golden"] .botanical-decoration {opacity:.28}
+:root[data-theme="wine"] .nav-link.active,:root[data-theme="wine"] .nav-link:hover,
+:root[data-theme="golden"] .nav-link.active,:root[data-theme="golden"] .nav-link:hover{background:var(--soft-red);color:var(--red);box-shadow:none}
+:root[data-theme="wine"] .mode-tabs,:root[data-theme="golden"] .mode-tabs {background:var(--surface);box-shadow:none;backdrop-filter:none;border-color:var(--line)}
+:root[data-theme="wine"] .mode-tab.active,:root[data-theme="wine"] .start-btn,
+:root[data-theme="golden"] .mode-tab.active,:root[data-theme="golden"] .start-btn{background:var(--red);color:#fff;box-shadow:0 10px 24px color-mix(in srgb,var(--red) 24%,transparent)}
+:root[data-theme="wine"] .start-btn:hover,:root[data-theme="wine"] .mode-tab.active:hover,
+:root[data-theme="golden"] .start-btn:hover,:root[data-theme="golden"] .mode-tab.active:hover{background:var(--red-dark)}
+:root[data-theme="wine"] .control,:root[data-theme="wine"] .icon-btn,:root[data-theme="wine"] .setup-action,:root[data-theme="wine"] .extra-button,:root[data-theme="wine"] .mini-btn,
+:root[data-theme="golden"] .control,:root[data-theme="golden"] .icon-btn,:root[data-theme="golden"] .setup-action,:root[data-theme="golden"] .extra-button,:root[data-theme="golden"] .mini-btn {background:var(--surface);box-shadow:none;border-color:var(--line);color:var(--ink)}
+:root[data-theme="wine"] .text-field,:root[data-theme="wine"] .time-input,:root[data-theme="wine"] .select-field,
+:root[data-theme="golden"] .text-field,:root[data-theme="golden"] .time-input,:root[data-theme="golden"] .select-field {background:var(--surface);border-color:var(--line);box-shadow:none;color:var(--ink)}
+:root[data-theme="wine"] .stat,:root[data-theme="golden"] .stat {background:var(--surface);border:1px solid var(--line);box-shadow:none}
+:root[data-theme="wine"] .history-entry,:root[data-theme="golden"] .history-entry,
+:root[data-theme="wine"] .history-disclosure>summary,:root[data-theme="golden"] .history-disclosure>summary {background:var(--panel);border-color:var(--line)}
+:root[data-theme="wine"] .chart-bar,:root[data-theme="golden"] .chart-bar {background:color-mix(in srgb,var(--red) 40%,var(--surface));box-shadow:none}
+:root[data-theme="wine"] .chart-bar.today,:root[data-theme="golden"] .chart-bar.today {background:var(--red)}
+:root[data-theme="wine"] .goal-fill,:root[data-theme="golden"] .goal-fill {background:var(--moss)}
+:root[data-theme="wine"] .goal-track,:root[data-theme="golden"] .goal-track {background:var(--surface)}
+:root[data-theme="wine"] .setting-dot.short,:root[data-theme="golden"] .setting-dot.short {background:#5f9c69}
+:root[data-theme="wine"] .setting-dot.long,:root[data-theme="golden"] .setting-dot.long {background:#e2a66b}
+:root[data-theme="wine"] .break-prompt,:root[data-theme="wine"] .break-nudge,
+:root[data-theme="golden"] .break-prompt,:root[data-theme="golden"] .break-nudge{background:var(--surface)}
+:root[data-theme="wine"] .mobile-bottom,:root[data-theme="golden"] .mobile-bottom{background:var(--panel)}
+.theme-switch {display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:14px;box-shadow:var(--shadow)}
+.theme-choice {display:flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:7px 13px;color:var(--muted);font-size:13px;font-weight:700;border:1px solid transparent;border-radius:10px;background:transparent}
+.theme-choice.selected {background:var(--surface);color:var(--ink);border-color:var(--line)}
+.theme-swatch {display:inline-block;flex:none;width:13px;height:13px;border-radius:50%;border:1px solid rgba(255,255,255,.22)}
+.swatch-wine {background:#9d2259}.swatch-golden {background:#f7bd38}
+:root[data-theme="golden"] .swatch-golden {border-color:#b88018}
+:root[data-theme="wine"] .timer-display {color:#fff0ed}
+:root[data-theme="golden"] .timer-display {color:#451a2d}
+/* The approved tomato is enlarged slightly but remains fully inside the progress ring. */
+#tomatoArt.mascot-art {width:80%;height:80%;transform:translate(-53.2%,-58.1%)}
+.tomato-zone {width:min(100%,clamp(328px,29vw,500px))}
+:root[data-theme="wine"] .progress-line,:root[data-theme="golden"] .progress-line {stroke:var(--red)}
+:root[data-theme="wine"] .progress-track,:root[data-theme="golden"] .progress-track {stroke:var(--ring)}
+:root[data-theme="wine"] #tomatoArt .mascot-frame {filter:drop-shadow(0 12px 14px rgba(0,0,0,.22))}
+:root[data-theme="golden"] #tomatoArt .mascot-frame {filter:drop-shadow(0 11px 15px rgba(106,64,19,.16))}
+@media(max-width:1020px){.botanical-decoration{display:none}.sidebar{display:none}}
+@media(max-width:680px){.theme-choice{font-size:12px;min-height:34px;padding:5px 8px;gap:5px}.theme-switch{padding:3px}.tomato-zone{width:min(100%,345px)}#tomatoArt.mascot-art{width:79%;height:79%}}
+
+
+/* V5.3 — approved polished illustration; preserve character anatomy and align within ring. */
+#tomatoArt.mascot-art {
+  left:50%; top:50%; width:82%; height:82%;
+  transform:translate(-50%,-50%);
+}
+:root[data-theme="wine"] #tomatoArt .mascot-frame {
+  filter:drop-shadow(0 11px 13px rgba(0,0,0,.22));
+}
+:root[data-theme="golden"] #tomatoArt .mascot-frame {
+  filter:drop-shadow(0 10px 13px rgba(118,62,28,.16));
+}
+/* Keep the start-to-ripe animation subtle; prevent the eye layers from overlapping. */
+#tomatoArt .mascot-frame {transition:opacity .22s linear;}
+#tomatoArt.celebrating .mascot-happy {transition:none!important;}
+@media(max-width:680px){#tomatoArt.mascot-art{width:82%;height:82%;}}
+
+</style>
+</head>
+<body>
+<div class="app" id="timer">
+ <aside class="sidebar" aria-label="Navigation">
+  <div class="brand"><svg class="brand-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 17C2 26 6 43 24 43S46 28 38 17Q32 10 24 16Q16 9 10 17" fill="#ed4640"/><path d="M24 15Q15 10 10 14L19 17L24 10L30 17L39 14Q32 10 24 15" fill="#34783f"/><path d="M24 12Q26 5 32 5" fill="none" stroke="#34783f" stroke-width="4" stroke-linecap="round"/><circle cx="18" cy="28" r="2" fill="#432b29"/><circle cx="30" cy="28" r="2" fill="#432b29"/><path d="M21 34Q24 37 27 34" fill="none" stroke="#432b29" stroke-width="1.7" stroke-linecap="round"/></svg>Pomodoro<span style="color:var(--red)">.</span></div>
+  <nav class="side-nav">
+   <a class="nav-link active" href="#timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 13V8M9 2h6M18 5l2 2"/></svg>Timer</a>
+   <a class="nav-link" href="#progress"><svg viewBox="0 0 24 24"><path d="M4 20V12h4v8M10 20V5h4v15M16 20v-9h4v9"/></svg>Progress</a>
+   <a class="nav-link" href="#settings"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M8 4v6M16 14v6"/></svg>Settings</a>
+  </nav>
+  <svg class="botanical-decoration" viewBox="0 0 210 270" aria-hidden="true" focusable="false">
+   <path d="M98 267Q95 207 124 138Q142 93 173 48M98 265Q87 205 53 155Q40 133 25 111M120 146Q100 101 93 52M99 222Q138 197 182 189" stroke="currentColor" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+   <ellipse cx="178" cy="60" rx="17" ry="38" transform="rotate(28 178 60)" fill="currentColor"/>
+   <ellipse cx="129" cy="116" rx="16" ry="33" transform="rotate(-26 129 116)" fill="currentColor"/>
+   <ellipse cx="94" cy="78" rx="14" ry="35" transform="rotate(-20 94 78)" fill="currentColor"/>
+   <ellipse cx="36" cy="134" rx="15" ry="31" transform="rotate(-48 36 134)" fill="currentColor"/>
+   <ellipse cx="68" cy="189" rx="15" ry="35" transform="rotate(-38 68 189)" fill="currentColor"/>
+   <ellipse cx="165" cy="183" rx="16" ry="30" transform="rotate(62 165 183)" fill="currentColor"/>
+  </svg>
+ </aside>
+ <main class="workspace">
+  <header class="topbar"><div><h1 class="heading">Focus timer</h1></div><div class="header-actions"><div class="theme-switch" role="group" aria-label="Colour theme"><button class="theme-choice" data-select-theme="wine" type="button" title="Wine Night"><span class="theme-swatch swatch-wine" aria-hidden="true"></span> Wine</button><button class="theme-choice" data-select-theme="golden" type="button" title="Golden Hour"><span class="theme-swatch swatch-golden" aria-hidden="true"></span> Golden</button></div></div></header>
+  <div class="content-grid">
+   <section class="panel timer-card" aria-label="Focus timer">
+    <div class="mode-tabs" role="group" aria-label="Session type"><button class="mode-tab active" data-mode="focus" aria-pressed="true">Focus</button><button class="mode-tab" data-mode="short" aria-pressed="false">Short break</button><button class="mode-tab" data-mode="long" aria-pressed="false">Long break</button></div>
+    <div class="tomato-zone" aria-hidden="true">
+     <svg class="progress-ring" viewBox="0 0 360 305"><circle class="progress-track" cx="180" cy="152" r="128"/><circle class="progress-line" id="progressRing" cx="180" cy="152" r="128"/></svg>
+     <div id="tomatoArt" class="mascot-art" role="img" aria-label="A golden-yellow tomato gradually ripens to bright red, then smiles with closed eyes at completion">
+      <img class="mascot-frame" src="assets/tomato_0.png" alt="" draggable="false" style="opacity:1">
+      <img class="mascot-frame" src="assets/tomato_1.png" alt="" draggable="false" style="opacity:0">
+      <img class="mascot-frame" src="assets/tomato_2.png" alt="" draggable="false" style="opacity:0">
+      <img class="mascot-frame" src="assets/tomato_3.png" alt="" draggable="false" style="opacity:0">
+      <img class="mascot-frame" src="assets/tomato_4.png" alt="" draggable="false" style="opacity:0">
+      <img class="mascot-frame mascot-happy" src="assets/tomato_happy.png" alt="" draggable="false" style="opacity:0">
+      <div id="sparkles" class="mascot-sparkles"><i class="burst burst-one"></i><i class="burst burst-two"></i><i class="burst burst-three"></i><i class="burst burst-four"></i><i class="heart-sparkle">♥</i></div>
+     </div>
+    </div>
+    <div class="timer-display" id="clock" role="timer" aria-label="Time remaining">25:00</div>
+    <p class="timer-message" id="timerMessage" aria-live="polite">Ready when you are.</p><div class="break-prompt" id="breakPrompt" hidden aria-live="polite"><p id="breakPromptText"></p><div class="break-prompt-actions"><button class="rec-button" type="button" id="takeBreakBtn">Take break</button><button class="setup-action" type="button" id="dismissBreakBtn">Not now</button></div></div><p class="break-nudge" id="breakNudge" hidden role="status"></p>
+    <div class="action-row">
+     <button class="control reset-control" id="resetBtn" title="Restart the current session" aria-label="Reset timer"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2-5.3M4 4v5h5"/></svg><span aria-hidden="true">Reset</span></button>
+     <button class="start-btn" id="startBtn"><svg id="startIcon" viewBox="0 0 24 24"><path d="M8 5 19 12 8 19Z"/></svg><span id="startText">Start</span></button>
+     <button class="control" id="skipBtn" title="Skip to next session" aria-label="Skip to next session"><svg viewBox="0 0 24 24"><path d="m5 5 10 7-10 7V5ZM19 5v14"/></svg></button>
+    </div>
+    <div class="rounds" id="roundsText">Focus session 1 of 4</div><p class="resume-hint" id="resumeHint" hidden></p>
+    <label class="task-wrap"><span class="field-label">Task <span style="font-weight:400">(optional)</span></span><input class="text-field" id="taskInput" maxlength="100" placeholder="What are you working on?" autocomplete="off"></label>
+   </section>
+   <div class="right-stack">
+    <section class="panel settings-card" id="timerSetup" aria-label="Timer setup">
+     <h2 class="card-heading">Timer setup</h2>
+     <div class="setting-headers"><span></span><span>Hours</span><span>Min</span><span>Sec</span></div>
+     <div class="timer-setting-row"><span class="setting-name"><i class="setting-dot"></i>Focus</span><input class="time-input" type="number" id="focusH" min="0" max="12" aria-label="Focus hours"/><input class="time-input" type="number" id="focusM" min="0" max="59" aria-label="Focus minutes"/><input class="time-input" type="number" id="focusS" min="0" max="59" aria-label="Focus seconds"/></div>
+     <div class="timer-setting-row"><span class="setting-name"><i class="setting-dot short"></i>Short break</span><input class="time-input" type="number" id="shortH" min="0" max="0" aria-label="Short break hours"/><input class="time-input" type="number" id="shortM" min="0" max="59" aria-label="Short break minutes"/><input class="time-input" type="number" id="shortS" min="0" max="59" aria-label="Short break seconds"/></div>
+     <div class="timer-setting-row"><span class="setting-name"><i class="setting-dot long"></i>Long break</span><input class="time-input" type="number" id="longH" min="0" max="2" aria-label="Long break hours"/><input class="time-input" type="number" id="longM" min="0" max="59" aria-label="Long break minutes"/><input class="time-input" type="number" id="longS" min="0" max="59" aria-label="Long break seconds"/></div>
+     <div class="break-options">
+      <label class="break-check"><input type="checkbox" id="shortEnabled" checked> Include short breaks</label>
+      <label class="break-check"><input type="checkbox" id="longEnabled"> Set a long break (optional)</label>
+     </div>
+     <p class="break-recommendation" id="shortRecommendation" aria-live="polite"></p>
+     <p class="break-recommendation" id="longHint" aria-live="polite">Long break: off (0 min). Choose a duration only if you want one.</p>
+     <div class="long-rec" id="longRecommendation" hidden><span>For focus sessions of 2 hours or more, a 30-minute long break is recommended.</span><button type="button" class="rec-button" id="useLongRecommendation">Use 30 min</button></div>
+     <div class="setup-actions" role="group" aria-label="Timer reset options">
+      <button type="button" class="setup-action primary-reset" id="restartTimerBtn">Reset timer</button>
+      <button type="button" class="setup-action" id="restoreTimesBtn">Restore default times</button>
+     </div>
+     <p class="setup-feedback" id="setupFeedback" role="status" aria-live="polite">Reset timer starts a fresh focus session using the durations above.</p>
+     <div class="section-separator"></div>
+     <div class="music-row"><span class="music-label"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 9l12-2"/><ellipse cx="6" cy="19" rx="3" ry="2"/><ellipse cx="18" cy="17" rx="3" ry="2"/></svg>Background audio</span><button id="audioToggle" class="toggle" aria-label="Toggle background audio" aria-pressed="false"></button></div>
+     <div class="audio-more" id="audioOptions" hidden><select class="select-field" id="soundChoice" aria-label="Soundscape"><option value="ambient">Soft ambient</option><option value="rain">Gentle rain</option><option value="brown">Brown noise</option><option value="mp3">My MP3</option></select><input type="range" id="volume" min="0" max="100" value="35" aria-label="Background audio volume"/><div class="audio-file-note" id="mp3Help" hidden><label class="small-link" for="mp3File">Choose an MP3</label> from your device. It stays on your device and must be selected again after reloading.<input class="file-input" id="mp3File" type="file" accept="audio/*,.mp3"/></div></div>
+
+    </section>
+    <section class="panel stats-card" aria-label="Today's progress"><div class="card-title-row"><h2 class="card-heading">Today's progress</h2><span class="small-note" id="dayLabel" hidden>Today</span></div>
+     <div class="stats-grid"><div class="stat"><span class="stat-icon">●</span><strong id="sessionStat">0</strong><span>Sessions</span></div><div class="stat"><span class="stat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v7l5 3"/></svg></span><strong id="timeStat">0m</strong><span>Focus time</span></div><div class="stat"><span class="stat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span><strong id="weekStat">0m</strong><span>This week</span></div></div>
+     <p class="stats-detail" id="statsDetail">Completed focus time only. Interrupted and test sessions are excluded.</p><div class="goal-wrap"><div class="goal-meta"><span>Daily goal</span><span id="goalLabel">0 / 4 sessions</span></div><div class="goal-track" role="progressbar" aria-label="Daily session goal progress" id="goalTrack" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0"><div class="goal-fill" id="goalFill"></div></div></div>
+    </section>
+    <section class="panel chart-card" id="progress" aria-label="Focus history"><div class="card-title-row"><h2 class="card-heading">Weekly focus</h2><div class="chart-head-tools"><strong id="weekTotal" class="week-total" aria-live="polite">Total: 0m</strong><div class="chart-nav"><button class="mini-btn" id="prevWeek" title="Previous week" aria-label="Previous week">‹</button><button class="mini-btn" id="nextWeek" title="Next week" aria-label="Next week">›</button></div></div></div><div class="chart" id="chart" aria-label="Focus time by day of the week"></div><div class="chart-footer"><span id="weekRange"></span></div></section>
+   </div>
+  </div>
+  <details class="history-disclosure" id="historyDisclosure"><summary>Session details <span>View or edit sessions</span></summary><section class="panel session-log" id="sessionHistory" aria-label="Session details"><div class="card-title-row"><h2 class="card-heading">Sessions</h2><select id="historyFilter" class="select-field" aria-label="Filter sessions"><option value="all">All sessions</option><option value="completed">Completed</option><option value="interrupted">Interrupted</option><option value="test">Tests</option></select></div><div id="historyList" class="history-list"></div><button type="button" id="showMoreHistory" class="setup-action" hidden>Show more</button></section></details>
+  <section class="extras" id="settings"><details id="settingsDetails"><summary>Settings · preferences & data</summary><div class="extras-inner"><label><input type="checkbox" id="autoNext"> Auto-start next session</label><label><input type="checkbox" id="chimeToggle"> Completion chime</label><label><input type="checkbox" id="notifyToggle"> Session-finish notifications</label><button type="button" class="extra-button" id="enableNotifications">Enable notifications</button><button type="button" class="extra-button" id="enableExactAlarm" hidden>Allow precise Android alarms</button><label><input type="checkbox" id="wakeToggle"> Keep screen awake while focusing (when supported)</label><label>Daily goal <input type="number" min="1" max="24" id="goalInput"/></label><p class="notification-help" id="notificationHelp" role="status" aria-live="polite">On Windows, keep the app running for completion alerts. Android APKs can use scheduled device alerts, subject to permissions.</p><button class="extra-button" id="testChime">Test chime</button><button class="extra-button" id="csvExport">Export CSV</button><button class="extra-button" id="backupBtn">Backup JSON</button><button class="extra-button" id="restoreBtn">Restore JSON</button><button class="extra-button" id="clearBtn">Clear history</button><input type="file" class="file-input" id="restoreFile" accept=".json,application/json"/></div><p class="privacy">History is saved on this device. Browser notifications may be delayed when the device is locked or asleep.</p><p class="notice" id="notice" role="status" aria-live="polite"></p></details></section>
+
+ <p class="version-stamp" style="color:var(--muted);font-size:10px;text-align:right;margin:6px 0 0">V5.3.1 · Upright tomato mascot</p></main>
+</div>
+<nav class="mobile-bottom" aria-label="Mobile navigation"><a href="#timer" class="active"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 13V8M9 2h6M18 5l2 2"/></svg>Timer</a><a href="#progress"><svg viewBox="0 0 24 24"><path d="M4 20V12h4v8M10 20V5h4v15M16 20v-9h4v9"/></svg>Progress</a><a href="#settings"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M8 4v6M16 14v6"/></svg>Settings</a></nav>
+<script>
+(()=>{'use strict';
+ const KEY='pomodoro-v3-3', PREV='pomodoro-v3', OLD='pomodoro-garden-v2', LEGACY='little-tomato-v1';
+ const $=id=>document.getElementById(id), MODES=['focus','short','long'];
+ const cap=(n,low,high,def)=>Number.isFinite(Number(n))&&n!==''&&n!==null?Math.max(low,Math.min(high,Math.round(Number(n)))):def;
+ const day=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+ const read=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}};
+ const write=v=>{try{localStorage.setItem(KEY,JSON.stringify(v));return true}catch{return false}};
+ const defaultSettings=()=>({durations:{focus:1500,short:300,long:0},shortEnabled:true,longEnabled:false,longDurationConfirmed:false,auto:false,chime:true,goal:4,theme:'wine',audio:false,sound:'ambient',volume:35,notify:false,keepAwake:false});
+ const uid=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+ function cleanLog(raw){if(!Array.isArray(raw))return [];const ids=new Set();return raw.slice(-25000).filter(x=>x&&typeof x==='object'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)).map(x=>({id:String(x.id||uid()).slice(0,100),date:x.date,seconds:cap(x.seconds??Math.round(Number(x.minutes||0)*60),1,43200,60),plannedSeconds:cap(x.plannedSeconds??x.seconds??Math.round(Number(x.minutes||0)*60),1,43200,60),status:x.status==='interrupted'?'interrupted':'completed',test:!!x.test,task:String(x.task||'').slice(0,100),finished:String(x.finished||'').slice(0,50)})).filter(x=>{if(ids.has(x.id))return false;ids.add(x.id);return true});}
+ function normalize(raw,legacy=false){const r=raw&&typeof raw==='object'?raw:{},orig=r.settings||{},settings=defaultSettings();
+  // Breaks are either OFF (0 seconds), or within the requested boundaries.
+  // Preserve prior V3 durations where valid, without turning on the old 15-min default long break.
+  const rawSecs=m=>legacy?Number(orig[m])*60:orig.durations?.[m];
+  settings.shortEnabled=orig.shortEnabled===undefined?rawSecs('short')!==0:!!orig.shortEnabled;
+  const f=rawSecs('focus');settings.durations.focus=cap(f,30,43200,1500);
+  const s=rawSecs('short');settings.durations.short=settings.shortEnabled?cap(s,300,900,300):0;
+  const l=Number(rawSecs('long'));
+  // V3.1 automatically inserted 30 minutes when the checkbox was ticked.
+  // Remove that stale automatic default for short-focus sessions exactly once.
+  // Explicit V3.2 selections carry a longDurationConfirmed marker.
+  const staleAutoThirty=!legacy&&orig.longDurationConfirmed===undefined&&orig.longEnabled===true&&l===1800&&settings.durations.focus<7200;
+  settings.longEnabled=staleAutoThirty?false:orig.longEnabled===undefined?(l>=1800):!!orig.longEnabled;
+  settings.longDurationConfirmed=!staleAutoThirty&&orig.longDurationConfirmed===true;
+  // The long-break editor may be enabled while still at 0 (unscheduled).
+  settings.durations.long=settings.longEnabled&&Number.isFinite(l)&&l>0?cap(l,1800,7200,1800):0;
+  settings.auto=!!orig.auto;settings.chime=orig.chime!==false;settings.goal=cap(orig.goal,1,24,4);settings.theme=orig.theme==='golden'?'golden':'wine';settings.audio=!!orig.audio;settings.sound=['ambient','rain','brown','mp3'].includes(orig.sound)?orig.sound:'ambient';settings.volume=cap(orig.volume,0,100,35);settings.notify=!!orig.notify;settings.keepAwake=!!orig.keepAwake;
+  const log=cleanLog(r.log);const rounds=cap(r.rounds,0,10000000,log.length);let t=r.timer||{};let mode=MODES.includes(t.mode)?t.mode:'focus';
+  const invalidBreak=mode==='short'&&!settings.shortEnabled||mode==='long'&&(!settings.longEnabled||settings.durations.long===0);
+  if(invalidBreak)mode='focus';
+  const bounds=mode==='focus'?[30,43200]:mode==='short'?[300,900]:[1800,7200];
+  // A session for a now-disabled break must not turn into a mismatched focus countdown.
+  let duration=invalidBreak?settings.durations.focus:cap(t.duration,bounds[0],bounds[1],settings.durations[mode]);
+  let remaining=invalidBreak?duration:cap(t.remaining,0,duration,duration);
+  let running=!invalidBreak&&!!t.running&&Number.isFinite(+t.endAt)&&+t.endAt>0;
+  return {settings,log,rounds,task:String(r.task||'').slice(0,100),timer:{mode,duration,remaining,running,endAt:running?+t.endAt:null,id:typeof t.id==='string'?t.id:uid(),lastNudge:cap(t.lastNudge,0,10000,0),dismissedNudge:cap(t.dismissedNudge,0,10000,0),startedAt:Number.isFinite(+t.startedAt)?+t.startedAt:null,celebrating:!legacy&&!!t.celebrating,completedMode:t.completedMode||null},pendingFocus:r.pendingFocus&&r.pendingFocus.mode==='focus'?{...r.pendingFocus,running:false,endAt:null,remaining:cap(r.pendingFocus.remaining,0,43200,1500)}:null,offerBreak:['short','long'].includes(r.offerBreak)?r.offerBreak:null,lastFocusDuration:cap(r.lastFocusDuration,0,43200,0),resumeAfterBreak:!!r.resumeAfterBreak};
+ }
+ const existing=read(KEY), previous=read(PREV), v2=read(OLD), v1=read(LEGACY);
+ let db=existing?normalize(existing):previous?normalize(previous):normalize(v2||v1||{},!!(v2||v1));
+ if(!existing){if(!previous)db.timer={mode:'focus',duration:db.settings.durations.focus,remaining:db.settings.durations.focus,running:false,endAt:null,id:uid(),celebrating:false,completedMode:null};write(db)}
+ let weekOffset=0,lastDay=day(new Date());
+ const persist=()=>{if(!write(db))notice('Browser storage is blocked; export a backup regularly.')};
+ const notice=message=>{$('notice').textContent=message};
+ const remain=()=>db.timer.running?Math.max(0,Math.ceil((db.timer.endAt-Date.now())/1000)):db.timer.remaining;
+ const duration=m=>db.settings.durations[m];
+ const fmt=s=>s>=3600?`${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+ const shortDuration=s=>s>=3600?`${+(s/3600).toFixed(1)}h`:s>=60?`${Math.round(s/60)}m`:`${s}s`;
+ const resetMode=m=>{db.timer={mode:m,duration:duration(m),remaining:duration(m),running:false,endAt:null,id:uid(),lastNudge:0,dismissedNudge:0,startedAt:null,celebrating:false,completedMode:null}};
+ const mix=(a,b,t)=>Math.round(a+(b-a)*t),rgb=(a,b,t)=>`rgb(${a.map((x,i)=>mix(x,b[i],t)).join(',')})`;
+ function paintTomato(p){
+  p=Math.max(0,Math.min(1,p));
+  const celebrating=!!db.timer.celebrating;
+  const art=$('tomatoArt');
+  art.classList.toggle('celebrating',celebrating);
+  // Only ripening colour frames are blended; every one has the same open eyes and smile.
+  // The separate happy face is shown only when the session completes.
+  const step=p*4;
+  const index=Math.min(4,Math.floor(step));
+  const fade=index===4?0:step-index;
+  document.querySelectorAll('.mascot-frame:not(.mascot-happy)').forEach((img,i)=>{
+    const alpha=celebrating?0:i===index?1:i===index+1?fade:0;
+    img.style.opacity=alpha.toFixed(3);
+  });
+ }
+ function renderTimer(){const t=db.timer,remaining=remain(),p=t.celebrating?1:Math.max(0,Math.min(1,1-remaining/Math.max(1,t.duration)));
+  paintTomato(t.mode==='focus'||t.celebrating?p:0.85);$('progressRing').style.strokeDashoffset=String(804.25*(1-p));$('clock').textContent=t.celebrating?'00:00':fmt(remaining);document.title=`${t.celebrating?'Done':fmt(remaining)} · Pomodoro`;
+  const running=t.running;$('startText').textContent=t.celebrating?`Start ${t.mode==='focus'?'focus':t.mode==='short'?'short break':'long break'}`:running?'Pause':remaining<t.duration?'Resume':'Start';$('startIcon').innerHTML=running?'<path d="M8 5v14M16 5v14"/>':'<path d="M8 5 19 12 8 19Z"/>';
+  $('timerMessage').textContent=db.resumeAfterBreak?'Break complete. Resume your focus when ready.':t.celebrating?(t.completedMode==='focus'?'Focus complete!':'Break complete!'):running?t.mode==='focus'?'Keep going. You’ve got this.':'Take your time.':remaining<t.duration?'Paused. Ready to continue?':t.mode==='focus'?'Ready when you are.':'Time for a break.';
+  $('roundsText').textContent=t.celebrating?'Nice work!':t.mode==='focus'?`Focus session ${db.log.filter(x=>x.status==='completed'&&!x.test).length%4+1} of 4`:'Break session';
+  $('resumeHint').hidden=!db.pendingFocus;$('resumeHint').textContent=db.pendingFocus?'Your unfinished focus session will resume after this break.':'';
+  document.querySelectorAll('.mode-tab').forEach(b=>{const active=b.dataset.mode===t.mode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));b.disabled=b.dataset.mode==='short'&&!db.settings.shortEnabled||b.dataset.mode==='long'&&(!db.settings.longEnabled||!db.settings.durations.long)});
+  const mark=Number(t.lastNudge||0),showNudge=t.mode==='focus'&&db.settings.shortEnabled&&mark>0&&mark>Number(t.dismissedNudge||0)&&remaining>0&&!t.celebrating;
+  $('breakNudge').hidden=!showNudge;if(showNudge)$('breakNudge').textContent=`${mark*25} minutes of focus reached. You can take a 5-minute break and resume this session.`;
+  const showOffer=!!db.offerBreak&&t.celebrating;const showPrompt=showNudge||showOffer;$('breakPrompt').hidden=!showPrompt;
+  if(showPrompt){let kind=showNudge?'short':db.offerBreak;let minutes=kind==='long'?(db.settings.durations.long||1800)/60:(db.settings.durations.short||300)/60;
+   $('breakPromptText').textContent=showNudge?`Take a ${minutes}-minute short break now? Your focus timer will be saved.`:kind==='long'?`A long break is recommended after ${fmt(db.lastFocusDuration)} of focus.`:`You finished a focus session. Take a ${minutes}-minute short break?`;
+   $('takeBreakBtn').textContent=`Take ${minutes}-min ${kind} break`;
+   $('dismissBreakBtn').textContent=showNudge?'Later':'Skip break';
+  }
+ }
+ function chime(force=false){if(!force&&!db.settings.chime)return;try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C();c.resume().catch(()=>{});[660,784,988].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain(),t=c.currentTime+.05+i*.23;o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.1,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+.30);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.31)});setTimeout(()=>c.close().catch(()=>{}),1500)}catch{}}
+ function logFocus(status,t,seconds,finishedAt){if(t.mode!=='focus'||seconds<1||db.log.some(x=>x.id===t.id))return false;
+  const d=new Date(finishedAt||Date.now());db.log.push({id:t.id,date:day(d),seconds:Math.max(1,Math.min(t.duration,Math.round(seconds))),plannedSeconds:t.duration,status,test:false,task:String(db.task||'').slice(0,100),finished:d.toISOString()});if(status==='completed')db.rounds++;return true;}
+ function interruptFocus(t=db.timer){if(t.mode==='focus'&&!t.celebrating){const r=t.running?Math.max(0,Math.ceil((t.endAt-Date.now())/1000)):t.remaining;logFocus('interrupted',t,t.duration-r,Date.now())}}
+ function chooseAfterFocus(t){if(t.duration>=7200)return 'long';if(t.duration>=1500&&db.settings.shortEnabled)return 'short';return null}
+ let wakeLock=null;
+ async function acquireWake(){if(!db.settings.keepAwake||!db.timer.running||document.hidden||!navigator.wakeLock?.request)return;try{wakeLock=await navigator.wakeLock.request('screen')}catch{}}
+ function releaseWake(){if(wakeLock){wakeLock.release().catch(()=>{});wakeLock=null}}
+ let nativeBridge=null;
+ const nativeAlarmState=()=>({enabled:!!db.settings.notify&&!!db.timer.running,at:db.timer.endAt,mode:db.timer.mode});
+ function syncNativeAlarmCancel(){if(nativeBridge)nativeBridge.sync({enabled:false}).catch(()=>{})}
+ function syncNativeAlarm(){if(nativeBridge)nativeBridge.sync(nativeAlarmState()).catch(e=>{console.warn('Native alarm unavailable',e);$('notificationHelp').textContent='Android notification could not be scheduled. Check permissions and device settings.'})}
+ function notifyDone(was){if(!db.settings.notify)return;
+  if(nativeBridge)return; // Native notification was scheduled at Start, including while locked.
+  if(typeof Notification==='undefined'||Notification.permission!=='granted'||!document.hidden)return;
+  const opts={body:was==='focus'?'Focus complete. Ready for a break?':'Break complete. Ready to focus?',tag:'pomodoro-session-end',icon:'./icons/icon-192.png'};
+  if(navigator.serviceWorker?.ready){navigator.serviceWorker.ready.then(reg=>reg.showNotification('Pomodoro · Session complete',opts)).catch(()=>{try{new Notification('Pomodoro · Session complete',opts)}catch{}})}
+  else{try{new Notification('Pomodoro · Session complete',opts)}catch{}}
+ }
+ window.addEventListener('pomodoro-native-ready',async()=>{nativeBridge=window.PomodoroNative||null;updateNotificationStatus();if(nativeBridge){syncNativeAlarm();if(db.settings.notify){const exact=await nativeBridge.exactStatus().catch(()=>null);if(exact==='denied')$('enableExactAlarm').hidden=false}}});
+ function complete(alerts=true){const t=db.timer,was=t.mode,finishedAt=t.running?t.endAt:Date.now();deactivateAudio();releaseWake();syncNativeAlarmCancel();db.pendingFocus=db.pendingFocus||null;
+  if(was==='focus'){logFocus('completed',t,t.duration,finishedAt);db.lastFocusDuration=t.duration;db.offerBreak=chooseAfterFocus(t)}else if(was==='short'&&db.pendingFocus){const focus=db.pendingFocus;db.pendingFocus=null;db.offerBreak=null;db.timer={...focus,running:false,endAt:null,celebrating:false,completedMode:null};db.resumeAfterBreak=true;persist();renderStats();renderTimer();if(alerts){chime();notifyDone(was)};if(db.settings.auto&&alerts&&Date.now()-finishedAt<15000)startTimer();return}else{db.offerBreak=null}
+  let next='focus';if(was==='focus'&&db.offerBreak==='short')next='short';if(was==='focus'&&db.offerBreak==='long'&&db.settings.longEnabled&&db.settings.durations.long>=1800)next='long';
+  resetMode(next);db.timer.celebrating=true;db.timer.completedMode=was;persist();renderStats();renderTimer();if(alerts){chime();notifyDone(was)}
+  if(db.settings.auto&&alerts&&Date.now()-finishedAt<15000&&!(db.offerBreak==='long'&&next==='focus')){db.offerBreak=null;db.timer.celebrating=false;startTimer()}
+ }
+ function tick(){if(lastDay!==day(new Date())){lastDay=day(new Date());renderStats()};if(!db.timer.running)return;
+  if(Date.now()>=db.timer.endAt){complete(Date.now()-db.timer.endAt<60000);return}
+  const t=db.timer;if(t.mode==='focus'&&db.settings.shortEnabled){const elapsed=t.duration-remain(),mark=Math.floor(elapsed/1500);if(mark>0&&mark>Number(t.lastNudge||0)&&remain()>0){t.lastNudge=mark;persist()}}
+  renderTimer();}
+ function startTimer(){if(db.timer.running)return;db.timer.celebrating=false;db.timer.completedMode=null;db.offerBreak=null;db.resumeAfterBreak=false;
+  if(db.timer.remaining<=0)resetMode(db.timer.mode);db.timer.running=true;db.timer.startedAt=db.timer.startedAt||Date.now();db.timer.endAt=Date.now()+db.timer.remaining*1000;persist();renderTimer();activateAudio();acquireWake();syncNativeAlarm()}
+ function pause(){if(!db.timer.running)return;if(Date.now()>=db.timer.endAt){tick();return}db.timer.remaining=remain();db.timer.running=false;db.timer.endAt=null;persist();renderTimer();deactivateAudio();releaseWake();syncNativeAlarm()}
+ function takeSuggestedBreak(){const t=db.timer;if(t.mode==='focus'&&!t.celebrating){if(!db.settings.shortEnabled)return;db.pendingFocus={...t,remaining:remain(),running:false,endAt:null,celebrating:false,completedMode:null};db.offerBreak=null;deactivateAudio();releaseWake();resetMode('short');persist();renderTimer();startTimer();return}
+  if(!db.offerBreak)return;const kind=db.offerBreak;if(kind==='long'&&db.settings.durations.long===0){db.settings.longEnabled=true;db.settings.durations.long=1800;db.settings.longDurationConfirmed=true;setInputs()}if(kind==='short'&&!db.settings.shortEnabled){db.offerBreak=null;persist();renderTimer();return}db.offerBreak=null;resetMode(kind);persist();renderTimer();startTimer()}
+ function dismissBreak(){const t=db.timer;if(t.mode==='focus'&&!t.celebrating){t.dismissedNudge=t.lastNudge}else{db.offerBreak=null;if(t.celebrating&&t.mode!=='focus')resetMode('focus')};persist();renderTimer()}
+ const hasProgress=()=>db.timer.running||(!db.timer.celebrating&&db.timer.remaining<db.timer.duration);
+ function discardPending(){db.resumeAfterBreak=false;if(db.pendingFocus){interruptFocus(db.pendingFocus);db.pendingFocus=null}db.offerBreak=null}
+ function changeMode(m){if(!MODES.includes(m)||m===db.timer.mode||m==='short'&&!db.settings.shortEnabled||m==='long'&&(!db.settings.longEnabled||!db.settings.durations.long))return;if((hasProgress()||db.pendingFocus)&&!confirm('Switch sessions? Unfinished focus time will be recorded as interrupted.'))return;interruptFocus();discardPending();resetMode(m);persist();renderStats();renderTimer();deactivateAudio();releaseWake();syncNativeAlarm()}
+ function reset(){if((hasProgress()||db.pendingFocus)&&!confirm('Reset this session? Unfinished focus time will be recorded as interrupted.'))return;interruptFocus();discardPending();resetMode(db.timer.mode);persist();renderStats();renderTimer();deactivateAudio();releaseWake();syncNativeAlarm()}
+ function resetToFocus(){if((hasProgress()||db.pendingFocus)&&!confirm('Reset timer and start fresh? Unfinished focus will be recorded as interrupted.'))return;interruptFocus();discardPending();deactivateAudio();releaseWake();resetMode('focus');persist();renderStats();renderTimer();syncNativeAlarm();$('setupFeedback').textContent=`Timer reset to ${fmt(duration('focus'))}. Ready to start fresh.`}
+ function restoreDefaultTimes(){if((hasProgress()||db.pendingFocus)&&!confirm('Restore default times and restart focus? Unfinished focus will be recorded as interrupted.'))return;interruptFocus();discardPending();deactivateAudio();releaseWake();db.settings.durations={focus:1500,short:300,long:0};db.settings.shortEnabled=true;db.settings.longEnabled=false;db.settings.longDurationConfirmed=false;resetMode('focus');setInputs();persist();renderStats();renderTimer();syncNativeAlarm();$('setupFeedback').textContent='Default times restored: Focus 25 min, short break 5 min, long break off.'}
+ function skip(){if((hasProgress()||db.pendingFocus)&&!confirm('Skip unfinished time? Unfinished focus will be recorded as interrupted.'))return;if(db.pendingFocus){deactivateAudio();releaseWake();db.timer={...db.pendingFocus,running:false,endAt:null,celebrating:false};db.pendingFocus=null;persist();renderTimer();syncNativeAlarm();return}const was=db.timer.mode;interruptFocus();db.offerBreak=null;const next=was==='focus'&&db.settings.shortEnabled&&db.timer.duration>=1500?'short':'focus';resetMode(next);persist();renderStats();renderTimer();deactivateAudio();releaseWake();syncNativeAlarm()}
+ function setInputs(){for(const m of MODES){const sec=db.settings.durations[m];$(m+'H').value=Math.floor(sec/3600);$(m+'M').value=Math.floor(sec%3600/60);$(m+'S').value=sec%60;
+   const enabled=m==='focus'||m==='short'&&db.settings.shortEnabled||m==='long'&&db.settings.longEnabled;
+   for(const piece of ['H','M','S'])$(m+piece).disabled=!enabled;
+  }
+  $('shortEnabled').checked=db.settings.shortEnabled;$('longEnabled').checked=db.settings.longEnabled;
+  $('shortRecommendation').textContent=db.settings.shortEnabled?'Recommended: 5-minute short break after every 25 minutes of focus. You can adjust it to 5–15 minutes.':'Short breaks are off.';
+  $('longRecommendation').hidden=db.settings.durations.focus<7200||db.settings.durations.long>=1800;
+  $('longHint').textContent=db.settings.durations.long>=1800
+   ?`Long break: ${fmt(db.settings.durations.long)} (chosen by you).`
+   :db.settings.longEnabled?'Long break is still off (0 min). Enter 30 min–2 h to schedule one.':'Long break: off (0 min). Select the checkbox to enter a duration.';
+ }
+ function updateDuration(m){const h=cap($(m+'H').value,0,m==='focus'?12:m==='long'?2:0,0),mi=cap($(m+'M').value,0,59,0),s=cap($(m+'S').value,0,59,0);
+  const secs=h*3600+mi*60+s;
+  const min=m==='focus'?30:m==='short'?300:1800,max=m==='focus'?43200:m==='short'?900:7200;
+  // Zero is valid for an optional long break even when its editor is open.
+  const value=m==='long'&&secs===0?0:cap(secs,min,max,min);
+  if(value!==secs)notice(`${m==='focus'?'Focus':m==='short'?'Short break':'Long break'} must be between ${m==='focus'?'30 seconds and 12 hours':m==='short'?'5 and 15 minutes':'30 minutes and 2 hours'}.`);
+  db.settings.durations[m]=value;
+  if(m==='long')db.settings.longDurationConfirmed=value>=1800;
+  if(db.timer.mode===m&&!hasProgress()&&!db.timer.celebrating)resetMode(m);
+  if(m==='long'&&value===0&&db.timer.mode==='long'){resetMode('focus');deactivateAudio();syncNativeAlarm()}
+  setInputs();persist();renderTimer();
+  $('setupFeedback').textContent=db.timer.mode===m&&hasProgress()
+   ?'New duration saved. Select Reset timer to start fresh using it.'
+   :'Duration updated. Select Reset timer to begin a fresh focus session.';
+ }
+ function renderStats(){const today=day(new Date()),log=db.log.filter(x=>x.status==='completed'&&!x.test),items=log.filter(x=>x.date===today),secs=items.reduce((a,x)=>a+x.seconds,0),now=new Date(),monday=new Date(now.getFullYear(),now.getMonth(),now.getDate());monday.setDate(monday.getDate()-(monday.getDay()+6)%7);
+  const wkDates=Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(d.getDate()+i);return day(d)});
+  const totalWeek=log.filter(x=>wkDates.includes(x.date)).reduce((a,x)=>a+x.seconds,0);
+  $('sessionStat').textContent=items.length;$('timeStat').textContent=shortDuration(secs);$('weekStat').textContent=shortDuration(totalWeek);
+  const goal=db.settings.goal;$('goalLabel').textContent=`${items.length} / ${goal} sessions`;$('goalFill').style.width=`${Math.min(100,items.length/goal*100)}%`;
+  $('statsDetail').textContent=`Recorded today: ${shortDuration(secs+db.log.filter(x=>x.date===today&&x.status==='interrupted'&&!x.test).reduce((a,x)=>a+x.seconds,0))} including interrupted focus · ${db.log.filter(x=>x.date===today&&x.status==='interrupted'&&!x.test).length} interruptions · ${db.log.filter(x=>x.date===today&&x.test).length} tests excluded.`;$('goalTrack').setAttribute('aria-valuemax',String(goal));$('goalTrack').setAttribute('aria-valuenow',String(Math.min(goal,items.length)));
+  const weekStart=new Date(monday);weekStart.setDate(weekStart.getDate()+weekOffset*7);
+  const dates=Array.from({length:7},(_,i)=>{const d=new Date(weekStart);d.setDate(d.getDate()+i);return d});
+  const values=dates.map(d=>log.filter(x=>x.date===day(d)).reduce((a,x)=>a+x.seconds,0)),max=Math.max(1800,...values),container=$('chart');container.replaceChildren();
+  dates.forEach((d,i)=>{const column=document.createElement('div');column.className='chart-col';column.title=`${d.toLocaleDateString(undefined,{month:'short',day:'numeric'})}: ${shortDuration(values[i])}`;
+   const amount=document.createElement('span');amount.className='chart-value';amount.textContent=values[i]?shortDuration(values[i]):'–';const bar=document.createElement('div');bar.className='chart-bar'+(day(d)===today?' today':'');bar.style.setProperty('--height',`${Math.max(3,values[i]/max*78)}px`);const label=document.createElement('span');label.className='chart-day';label.textContent=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i];column.append(amount,bar,label);container.append(column)});
+  $('weekRange').textContent=`${dates[0].toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${dates[6].toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;$('weekTotal').textContent=`Total: ${shortDuration(values.reduce((a,b)=>a+b,0))}`;$('nextWeek').disabled=weekOffset>=0;renderHistory();
+ }
+
+ let historyLimit=12,historyFilter='all';
+ function renderHistory(){const container=$('historyList');container.replaceChildren();const records=db.log.filter(x=>historyFilter==='all'||historyFilter==='test'&&x.test||historyFilter===x.status&&!x.test).sort((a,b)=>(b.finished||b.date).localeCompare(a.finished||a.date));
+  if(!records.length){const p=document.createElement('p');p.className='status-note';p.textContent='No sessions in this view yet.';container.append(p)}
+  records.slice(0,historyLimit).forEach(x=>{const entry=document.createElement('div');entry.className='history-entry';entry.dataset.id=x.id;
+   const top=document.createElement('div');top.className='history-top';const info=document.createElement('div');const line=document.createElement('div');line.className='history-description';line.textContent=`${x.date} · ${fmt(x.seconds)} ${x.status==='interrupted'?'interrupted':'completed'}${x.test?' · Test':''}`;const meta=document.createElement('div');meta.className='history-meta';meta.textContent=x.task||'No task';info.append(line,meta);
+   const buttons=document.createElement('div');buttons.className='history-buttons';const edit=document.createElement('button');edit.textContent='Edit';edit.type='button';edit.addEventListener('click',()=>{const form=entry.querySelector('.history-form');form.hidden=!form.hidden;edit.textContent=form.hidden?'Edit':'Close'});
+   const test=document.createElement('button');test.type='button';test.textContent=x.test?'Use in stats':'Mark test';test.addEventListener('click',()=>{x.test=!x.test;persist();renderStats();renderHistory()});
+   const del=document.createElement('button');del.type='button';del.textContent='Delete';del.addEventListener('click',()=>{if(!confirm('Delete this session entry? This cannot be undone.'))return;db.log=db.log.filter(y=>y.id!==x.id);persist();renderStats();renderHistory()});buttons.append(edit,test,del);top.append(info,buttons);
+   const form=document.createElement('form');form.className='history-form';form.hidden=true;
+   const field=(label,type,value,attrs={})=>{const wrap=document.createElement('label');wrap.textContent=label;const inp=document.createElement('input');inp.type=type;inp.value=value;Object.entries(attrs).forEach(([k,v])=>inp.setAttribute(k,String(v)));wrap.append(inp);form.append(wrap);return inp};
+   const date=field('Date','date',x.date,{required:true});const mins=field('Minutes','number',Math.floor(x.seconds/60),{min:0,max:720,required:true});const secs=field('Seconds','number',x.seconds%60,{min:0,max:59,required:true});
+   const statusWrap=document.createElement('label');statusWrap.textContent='Status';const status=document.createElement('select');for(const v of ['completed','interrupted']){const option=document.createElement('option');option.value=v;option.textContent=v==='completed'?'Completed':'Interrupted';status.append(option)}status.value=x.status;statusWrap.append(status);form.append(statusWrap);
+   const task=field('Task','text',x.task,{maxlength:100});task.parentElement.classList.add('wide');const testWrap=document.createElement('label');testWrap.className='test-field';const testInput=document.createElement('input');testInput.type='checkbox';testInput.checked=x.test;testWrap.append(testInput,document.createTextNode('Test session (excluded from stats)'));form.append(testWrap);
+   const actions=document.createElement('div');actions.className='form-actions';const save=document.createElement('button');save.type='submit';save.textContent='Save changes';const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.addEventListener('click',()=>{form.hidden=true;edit.textContent='Edit'});actions.append(save,cancel);form.append(actions);
+   form.addEventListener('submit',event=>{event.preventDefault();const duration=Number(mins.value)*60+Number(secs.value);if(!/^\d{4}-\d{2}-\d{2}$/.test(date.value)||!Number.isFinite(duration)||duration<1||duration>43200){notice('Choose a valid date and duration between 1 second and 12 hours.');return}x.date=date.value;x.seconds=Math.round(duration);x.status=status.value;x.test=testInput.checked;x.task=task.value.slice(0,100);persist();renderStats();renderHistory()});
+   entry.append(top,form);container.append(entry)});
+  $('showMoreHistory').hidden=records.length<=historyLimit;
+ }
+ function setTheme(theme){theme=theme==='golden'?'golden':'wine';db.settings.theme=theme;document.documentElement.dataset.theme=theme;$('themeColor').content=theme==='wine'?'#1c111b':'#ffc946';document.querySelectorAll('[data-select-theme]').forEach(b=>{const active=b.dataset.selectTheme===theme;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active));});persist()}
+ // The soundscapes are generated locally. MP3s are never uploaded or stored.
+ let audioCtx=null,audioNodes=[],noiseSource=null,audioEl=null,mp3Url=null;
+ const soundSetup=()=>{ $('audioToggle').setAttribute('aria-pressed',String(db.settings.audio));$('audioOptions').hidden=!db.settings.audio;$('soundChoice').value=db.settings.sound;$('volume').value=db.settings.volume;$('mp3Help').hidden=db.settings.sound!=='mp3'};
+ function deactivateAudio(){try{audioNodes.forEach(n=>{try{n.stop?.()}catch{}try{n.disconnect()}catch{}});audioNodes=[];audioCtx?.close().catch(()=>{});audioCtx=null;if(audioEl){audioEl.pause()}}catch{}}
+ function activateAudio(){deactivateAudio();if(!db.settings.audio||!db.timer.running)return;
+  const volume=db.settings.volume/100;
+  if(db.settings.sound==='mp3'){if(!audioEl){notice('Select an MP3 first to play your own music.');return}audioEl.volume=volume;audioEl.loop=true;audioEl.play().catch(()=>notice('Tap Play again to allow audio.'));return}
+  try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;const c=new C();audioCtx=c;c.resume().catch(()=>{});const master=c.createGain();master.gain.value=0.00001;master.connect(c.destination);master.gain.linearRampToValueAtTime(Math.max(.00001,volume*.22),c.currentTime+.7);audioNodes.push(master);
+   if(db.settings.sound==='ambient'){[130.81,164.81,196,261.63].forEach((frequency,i)=>{const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=frequency;g.gain.value=i===0?.12:.055;o.connect(g).connect(master);o.start();audioNodes.push(o,g)})}
+   else {const len=c.sampleRate*3,buffer=c.createBuffer(1,len,c.sampleRate),arr=buffer.getChannelData(0);let last=0;for(let i=0;i<len;i++){const white=Math.random()*2-1;if(db.settings.sound==='brown'){last=(last+.02*white)/1.02;arr[i]=last*3.4}else{arr[i]=white*.36}}const src=c.createBufferSource(),filter=c.createBiquadFilter();src.buffer=buffer;src.loop=true;filter.type='lowpass';filter.frequency.value=db.settings.sound==='rain'?1700:540;src.connect(filter).connect(master);src.start();audioNodes.push(src,filter)}
+  }catch{deactivateAudio()}
+ }
+ function download(name,content,type){const u=URL.createObjectURL(new Blob([content],{type})),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}
+ function csvCell(x){let s=String(x??'');if(/^[\s]*[=+@-]/.test(s))s="'"+s;return `"${s.replaceAll('"','""')}"`}
+ function updateNotificationStatus(){
+  if(nativeBridge){
+   $('notificationHelp').textContent='Android APK: local device alarms can notify you when the screen is locked. Allow notification and exact-alarm permissions. Device power saving may affect delivery.';
+   $('notifyToggle').checked=!!db.settings.notify;$('notifyToggle').disabled=false;
+   $('enableNotifications').hidden=!!db.settings.notify;$('enableNotifications').disabled=false;
+   return;
+  }
+  const supported='Notification' in window&&window.isSecureContext;
+  const allowed=supported&&Notification.permission==='granted';if(!allowed)db.settings.notify=false;
+  const msg=!supported?'Notifications require HTTPS or localhost; a downloaded HTML file cannot provide reliable system alerts.':Notification.permission==='granted'?'Web notifications enabled. Keep the app open for timer alerts; locked-but-awake Windows may work, sleep is not guaranteed.':Notification.permission==='denied'?'Notifications are blocked in browser settings.':'Enable notifications for an alert when a running session finishes.';
+  $('notificationHelp').textContent=msg;$('notifyToggle').checked=!!db.settings.notify&&allowed;$('notifyToggle').disabled=!allowed;
+  $('enableNotifications').hidden=!supported||Notification.permission==='granted';$('enableNotifications').disabled=!supported||Notification.permission==='denied';
+ }
+
+ async function requestNotifications(){
+  if(nativeBridge){try{const ok=await nativeBridge.request();db.settings.notify=!!ok;persist();updateNotificationStatus();syncNativeAlarm();
+   const exact=await nativeBridge.exactStatus().catch(()=>null);$('enableExactAlarm').hidden=exact!=='denied';
+   notice(ok?'Android notifications enabled. Check precise-alarm permission if indicated.':'Android notification permission was not granted.');return;
+  }catch(e){notice('Unable to enable Android notifications.');return}}
+  if(!('Notification' in window)||!window.isSecureContext){updateNotificationStatus();notice('Notifications require HTTPS or localhost.');return}
+  try{const perm=await Notification.requestPermission();db.settings.notify=perm==='granted';persist();updateNotificationStatus();notice(perm==='granted'?'Completion notifications enabled.':'Notification permission was not granted.')}catch{notice('Browser notification permission is unavailable.');updateNotificationStatus()}
+ }
+
+ function setup(){setTheme(db.settings.theme);setInputs();soundSetup();$('taskInput').value=db.task;$('autoNext').checked=db.settings.auto;$('chimeToggle').checked=db.settings.chime;$('goalInput').value=db.settings.goal;$('notifyToggle').checked=db.settings.notify;$('wakeToggle').checked=db.settings.keepAwake;updateNotificationStatus();
+  $('startBtn').addEventListener('click',()=>db.timer.running?pause():startTimer());$('resetBtn').addEventListener('click',reset);$('skipBtn').addEventListener('click',skip);$('takeBreakBtn').addEventListener('click',takeSuggestedBreak);$('dismissBreakBtn').addEventListener('click',dismissBreak);
+  $('restartTimerBtn').addEventListener('click',resetToFocus);$('restoreTimesBtn').addEventListener('click',restoreDefaultTimes);
+  document.querySelectorAll('.mode-tab').forEach(b=>b.addEventListener('click',()=>changeMode(b.dataset.mode)));
+  $('shortEnabled').addEventListener('change',()=>{
+   const enabled=$('shortEnabled').checked;
+   if(!enabled&&db.timer.mode==='short'&&hasProgress()&&!confirm('Turn off short breaks? The current break will be discarded.')){$('shortEnabled').checked=true;return}
+   db.settings.shortEnabled=enabled;db.settings.durations.short=enabled?300:0;
+   if(!enabled&&db.timer.mode==='short'){if(db.pendingFocus){db.timer={...db.pendingFocus,running:false,endAt:null};db.pendingFocus=null}else resetMode('focus');deactivateAudio();releaseWake();}
+   setInputs();persist();renderTimer();
+  });
+  $('longEnabled').addEventListener('change',()=>{
+   const enabled=$('longEnabled').checked;
+   if(!enabled&&db.timer.mode==='long'&&hasProgress()&&!confirm('Turn off long breaks? The current break will be discarded.')){$('longEnabled').checked=true;return}
+   // Opening the editor must never automatically choose 30 minutes.
+   db.settings.longEnabled=enabled;
+   if(!enabled){db.settings.durations.long=0;db.settings.longDurationConfirmed=false;}
+   if(!enabled&&db.timer.mode==='long'){resetMode('focus');deactivateAudio();releaseWake();}
+   setInputs();persist();renderTimer();
+   $('setupFeedback').textContent=enabled?'Long break editor opened. Enter 30 minutes–2 hours, or leave 0 to keep it off.':'Long breaks turned off (0 minutes).';
+  });
+  $('useLongRecommendation').addEventListener('click',()=>{db.settings.longEnabled=true;db.settings.durations.long=1800;db.settings.longDurationConfirmed=true;setInputs();persist();renderTimer();$('setupFeedback').textContent='30-minute long break selected for long focus sessions.';});
+  document.querySelectorAll('a[href="#settings"]').forEach(a=>a.addEventListener('click',()=>{$('settingsDetails').open=true;}));
+  if(location.hash==='#settings')$('settingsDetails').open=true;
+  document.querySelectorAll('[data-select-theme]').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.selectTheme)));
+  $('taskInput').addEventListener('input',()=>{db.task=$('taskInput').value.slice(0,100);persist()});
+  for(const m of MODES)for(const piece of ['H','M','S'])$(m+piece).addEventListener('change',()=>updateDuration(m));
+  $('audioToggle').addEventListener('click',()=>{db.settings.audio=!db.settings.audio;soundSetup();persist();db.settings.audio?activateAudio():deactivateAudio()});
+  $('soundChoice').addEventListener('change',()=>{db.settings.sound=$('soundChoice').value;soundSetup();persist();activateAudio()});
+  $('volume').addEventListener('input',()=>{db.settings.volume=cap($('volume').value,0,100,35);persist();if(audioCtx){const master=audioNodes[0];if(master?.gain)master.gain.value=db.settings.volume/100*.22}if(audioEl)audioEl.volume=db.settings.volume/100});
+  $('mp3File').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('audio/')&&!/\.mp3$/i.test(file.name)){notice('Please choose an audio file.');return}if(mp3Url)URL.revokeObjectURL(mp3Url);mp3Url=URL.createObjectURL(file);if(audioEl)audioEl.pause();audioEl=new Audio(mp3Url);notice(`Loaded ${file.name}. Music stays on this device.`);activateAudio()});
+  $('autoNext').addEventListener('change',()=>{db.settings.auto=$('autoNext').checked;persist()});$('chimeToggle').addEventListener('change',()=>{db.settings.chime=$('chimeToggle').checked;persist()});
+  $('goalInput').addEventListener('change',()=>{db.settings.goal=cap($('goalInput').value,1,24,4);$('goalInput').value=db.settings.goal;persist();renderStats()});
+  $('notifyToggle').addEventListener('change',async()=>{if($('notifyToggle').checked){$('notifyToggle').checked=false;await requestNotifications()}else{db.settings.notify=false;persist();syncNativeAlarm();updateNotificationStatus()}});
+  $('enableNotifications').addEventListener('click',requestNotifications);$('enableExactAlarm').addEventListener('click',()=>nativeBridge?.openExactSettings());
+  $('wakeToggle').addEventListener('change',()=>{db.settings.keepAwake=$('wakeToggle').checked;persist();if(db.settings.keepAwake)acquireWake();else releaseWake()});
+  $('historyFilter').addEventListener('change',()=>{historyFilter=$('historyFilter').value;historyLimit=12;renderHistory()});$('showMoreHistory').addEventListener('click',()=>{historyLimit+=20;renderHistory()});
+  $('testChime').addEventListener('click',()=>chime(true));$('prevWeek').addEventListener('click',()=>{weekOffset--;renderStats()});$('nextWeek').addEventListener('click',()=>{if(weekOffset<0){weekOffset++;renderStats()}});
+  $('csvExport').addEventListener('click',()=>{const rows=[['Date','Seconds','Minutes','Planned seconds','Status','Test','Task','Completed / interrupted at'],...db.log.map(x=>[x.date,x.seconds,+(x.seconds/60).toFixed(2),x.plannedSeconds,x.status,x.test?'Yes':'No',x.task,x.finished])];download(`pomodoro-focus-${day(new Date())}.csv`,'\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8')});
+  $('backupBtn').addEventListener('click',()=>download(`pomodoro-v3-3-backup-${day(new Date())}.json`,JSON.stringify({app:'Pomodoro',version:'3.3',exportedAt:new Date().toISOString(),...db},null,2),'application/json'));
+  $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());$('restoreFile').addEventListener('change',async e=>{const file=e.target.files?.[0];e.target.value='';if(!file)return;if(file.size>5*1024*1024){notice('Backup too large. Maximum 5 MB.');return}try{const raw=JSON.parse(await file.text());if(!raw||!Array.isArray(raw.log)||typeof raw.settings!=='object'||!raw.settings)throw Error();if(!confirm('Restore this backup? Current history and settings on this device will be replaced.'))return;const restored=normalize(raw,!raw.settings.durations);restored.pendingFocus=null;restored.offerBreak=null;restored.timer={mode:'focus',duration:restored.settings.durations.focus,remaining:restored.settings.durations.focus,running:false,endAt:null,id:uid(),celebrating:false,completedMode:null};db=restored;deactivateAudio();persist();location.reload()}catch{notice('This is not a valid Pomodoro backup.')}});
+  $('clearBtn').addEventListener('click',()=>{if(!db.log.length){notice('History is already empty.');return}if(!confirm('Delete all completed sessions from this browser? Download a backup first if needed.'))return;db.log=[];db.rounds=0;persist();renderStats();renderTimer();notice('History cleared. Timer settings were kept.')});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){tick();acquireWake()}else releaseWake()});window.addEventListener('focus',tick);window.addEventListener('pageshow',tick);
+  window.addEventListener('storage',e=>{if(e.key===KEY&&e.newValue){db=normalize(read(KEY));setTheme(db.settings.theme);setInputs();soundSetup();$('taskInput').value=db.task;$('autoNext').checked=db.settings.auto;$('chimeToggle').checked=db.settings.chime;$('goalInput').value=db.settings.goal;updateNotificationStatus();renderStats();renderTimer()}});
+  document.addEventListener('keydown',e=>{if(e.repeat||e.altKey||e.ctrlKey||e.metaKey||/INPUT|TEXTAREA|SELECT|BUTTON|A|SUMMARY/.test(e.target.tagName)||e.target.isContentEditable)return;if(e.code==='Space'){e.preventDefault();db.timer.running?pause():startTimer()}});
+  if(db.timer.running&&Date.now()>=db.timer.endAt)complete(false);renderTimer();renderStats();acquireWake();setInterval(tick,500);
+  if('serviceWorker' in navigator&&location.protocol.startsWith('http')&&!window.PomodoroNative){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline install unavailable',e)))}
+ }
+ setup();
+})();
+</script>
+</body>
+</html>

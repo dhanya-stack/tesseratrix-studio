@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "Pomodoro \u2014 Focus Timer",
+  "short_name": "Pomodoro",
+  "description": "A cozy timer with a tomato that ripens as you focus.",
+  "lang": "en",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1c111b",
+  "theme_color": "#1c111b",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
